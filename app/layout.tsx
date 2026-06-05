@@ -5,7 +5,7 @@ import { Providers } from '@/components/Providers';
 
 export const metadata: Metadata = {
   title: 'App Generator — Build apps from a prompt',
-  description: 'A metadata-driven application runtime. Describe an app, get a working app.',
+  description: 'A metadata-driven app runtime powered by Mistral AI. Describe an app, get a working app.',
   manifest: '/manifest.webmanifest',
 };
 

@@ -2,6 +2,8 @@
 // Next.js app that mirrors the runtime's rendering of the given config.
 
 import type { AppConfig } from '../config/types';
+import fs from 'node:fs';
+import path from 'node:path';
 
 interface Opts { config: AppConfig; name: string; slug: string }
 
@@ -60,7 +62,7 @@ export default function Home() {
   return <Runtime config={config} />;
 }
 `;
-  // The runtime is the same renderer we already built. We serialize it.
+  // The runtime is the same renderer we already built.
   const runtimeFiles = buildRuntimeBundle();
   const envExample = `DATABASE_URL="postgresql://..."
 NEXTAUTH_SECRET="change-me"
@@ -79,28 +81,23 @@ NEXTAUTH_SECRET="change-me"
   ];
 }
 
-function buildRuntimeBundle() {
-  // The runtime used by the exported app. We point the exporter at the
-  // actual source files in this repo (relative paths). Octokit will read
-  // them at export time and inline them as text into the new repo.
-  // For a real product you'd inline the bundled JS; for the export, we
-  // copy the same renderer source into the generated repo.
-  const fs = require('fs') as typeof import('fs');
-  const path = require('path') as typeof import('path');
+function buildRuntimeBundle(): Array<{ path: string; content: string }> {
+  const out: Array<{ path: string; content: string }> = [];
   const root = path.join(process.cwd(), 'components', 'renderer');
   const libRoot = path.join(process.cwd(), 'lib', 'config');
-  const out: Array<{ path: string; content: string }> = [];
   function walk(dir: string, prefix: string) {
-    for (const name of fs.readdirSync(dir)) {
+    let names: string[] = [];
+    try { names = fs.readdirSync(dir); } catch { return; }
+    for (const name of names) {
       const full = path.join(dir, name);
-      const stat = fs.statSync(full);
+      let stat;
+      try { stat = fs.statSync(full); } catch { continue; }
       if (stat.isDirectory()) walk(full, prefix + name + '/');
       else out.push({ path: prefix + name, content: fs.readFileSync(full, 'utf8') });
     }
   }
   try { walk(root, 'lib/runtime/renderer/'); } catch (e) { console.error('[export] renderer copy failed', e); }
   try { walk(libRoot, 'lib/runtime/config/'); } catch {}
-  // Add a tiny entry that re-exports the renderer.
   out.push({
     path: 'lib/runtime/Runtime.tsx',
     content: `'use client';

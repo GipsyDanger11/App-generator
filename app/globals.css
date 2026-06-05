@@ -3,13 +3,72 @@
 @tailwind utilities;
 
 :root {
-  --brand: #7c3aed;
+  --brand-50: #f5f3ff;
+  --brand-100: #ede9fe;
+  --brand-200: #ddd6fe;
+  --brand-300: #c4b5fd;
+  --brand-400: #a78bfa;
+  --brand-500: #8b5cf6;
+  --brand-600: #7c3aed;
+  --brand-700: #6d28d9;
+  --brand-800: #5b21b6;
+  --brand-900: #4c1d95;
+  --brand-950: #2e1065;
 }
 
-html, body { background: #f8fafc; }
+html, body { background: #faf7ff; color: #1e1b4b; }
 
-/* Component-style helpers used across the renderer */
-.card { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
-.input { @apply w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500; }
-.btn { @apply inline-flex items-center rounded-md bg-brand-600 text-white px-4 py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50; }
-.btn-secondary { @apply inline-flex items-center rounded-md bg-white text-slate-900 border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50; }
+/* ---------- Component helpers ---------- */
+.card { @apply rounded-xl border border-purple-100 bg-white shadow-sm; }
+.input { @apply w-full rounded-md border border-purple-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent; }
+.btn { @apply inline-flex items-center justify-center rounded-md bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white px-4 py-2 text-sm font-medium shadow-sm hover:from-purple-700 hover:to-fuchsia-700 disabled:opacity-50 transition; }
+.btn-secondary { @apply inline-flex items-center justify-center rounded-md bg-white text-purple-900 border border-purple-200 px-4 py-2 text-sm font-medium hover:bg-purple-50 transition; }
+.btn-ghost { @apply inline-flex items-center justify-center rounded-md text-purple-900 px-3 py-1.5 text-sm font-medium hover:bg-purple-50 transition; }
+
+/* ---------- Wave background ---------- */
+.wave-bg { position: relative; isolation: isolate; }
+.wave-bg::before {
+  content: "";
+  position: absolute; inset: 0; z-index: -2;
+  background: linear-gradient(135deg, #2e1065 0%, #4c1d95 30%, #6d28d9 60%, #7c3aed 100%);
+}
+.wave-bg::after {
+  content: "";
+  position: absolute; inset: 0; z-index: -1;
+  background:
+    radial-gradient(1200px 600px at 80% -20%, rgba(244, 114, 182, 0.35), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(99, 102, 241, 0.4), transparent 60%);
+}
+
+/* Animated SVG waves */
+.waves { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 180px; z-index: 0; pointer-events: none; }
+.waves svg { position: absolute; bottom: 0; left: 0; width: 200%; height: 100%; }
+.waves .wave-1 { animation: wave-slide 14s linear infinite; opacity: 0.45; }
+.waves .wave-2 { animation: wave-slide 18s linear infinite reverse; opacity: 0.30; }
+.waves .wave-3 { animation: wave-slide 22s linear infinite; opacity: 0.18; }
+@keyframes wave-slide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Floating blob animation */
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -30px) scale(1.05); }
+  66% { transform: translate(-15px, 20px) scale(0.97); }
+}
+.blob { animation: blob 14s ease-in-out infinite; }
+.blob-2 { animation: blob 18s ease-in-out infinite reverse; }
+
+/* Card hover lift */
+.lift { transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
+.lift:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -8px rgba(124, 58, 237, 0.25); border-color: rgba(167, 139, 250, 0.6); }
+
+/* Gradient text */
+.gradient-text { background: linear-gradient(90deg, #7c3aed 0%, #c026d3 50%, #db2777 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Pretty scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #ddd6fe; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #c4b5fd; }
+::-webkit-scrollbar-track { background: transparent; }

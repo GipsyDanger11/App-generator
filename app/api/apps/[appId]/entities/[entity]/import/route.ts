@@ -7,11 +7,16 @@ import { findEntity, loadApp } from '@/lib/appLoader';
 import { buildEntityZodSchema } from '@/lib/config/parser';
 import { runWorkflows } from '@/lib/workflows';
 import { jsonInput } from '@/lib/jsonInput';
+import { unwrapParams, pickString } from '@/lib/routeParams';
 
-export async function POST(req: Request, { params }: { params: { appId: string; entity: string } }) {
-  const r = await loadApp(params.appId, { requireOwner: true });
+export async function POST(req: Request, ctx: { params: { appId: string; entity: string } | Promise<{ appId: string; entity: string }> }) {
+  const params = await unwrapParams(ctx.params);
+  const appId = pickString(params, 'appId');
+  const entityName = pickString(params, 'entity');
+  if (!appId) return NextResponse.json({ error: 'Missing appId' }, { status: 400 });
+  const r = await loadApp(appId, { requireOwner: true });
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
-  const entity = findEntity(r.config, params.entity);
+  const entity = findEntity(r.config, entityName);
   if (!entity) return NextResponse.json({ error: 'Unknown entity' }, { status: 404 });
 
   let body: any;
@@ -34,9 +39,9 @@ export async function POST(req: Request, { params }: { params: { appId: string; 
     const v = validate(mapped);
     if (!v.ok) { result.failed.push({ row: i, errors: v.errors }); continue; }
     try {
-      const rec = await prisma.record.create({ data: { appId: params.appId, entityName: entity.name, data: jsonInput(v.clean), createdBy: r.user.id } });
+      const rec = await prisma.record.create({ data: { appId, entityName: entity.name, data: jsonInput(v.clean), createdBy: r.user.id } });
       result.created++;
-      void runWorkflows({ appId: params.appId, appConfig: r.config, ownerId: r.user.id, triggerEntity: entity.name, triggerEvent: 'create', record: { id: rec.id, ...(v.clean as object) } });
+      void runWorkflows({ appId, appConfig: r.config, ownerId: r.user.id, triggerEntity: entity.name, triggerEvent: 'create', record: { id: rec.id, ...(v.clean as object) } });
     } catch (e) {
       result.failed.push({ row: i, errors: { _row: (e as Error).message } });
     }

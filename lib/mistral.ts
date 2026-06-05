@@ -10,7 +10,6 @@ import type { AppConfig } from './config/types';
 import { parseConfig, ensureCompleteApp } from './config/parser';
 import { findTemplate, TEMPLATES } from './config/templates';
 import type { Logger } from './logger';
-import type { Logger } from './logger';
 
 const SYSTEM_PROMPT = `You are an AI that designs app configurations in JSON for a metadata-driven app runtime.
 Output ONLY a single JSON object — no prose, no markdown fences, no comments.
@@ -267,31 +266,103 @@ async function callAnthropic(apiKey: string, prompt: string): Promise<unknown | 
   return extractJson(json.content?.[0]?.text ?? '');
 }
 
-async function tryProvider(provider: Provider, prompt: string, logger?: { info: (component: string, event: string, data?: Record<string, unknown>) => void }): Promise<AppConfig | null> {
+async function tryProvider(provider: Provider, prompt: string, logger?: Logger): Promise<AppConfig | null> {
   const apiKey = getApiKey(provider);
-  if (!apiKey) return null;
+  const model = provider === 'groq' ? (process.env.GROQ_MODEL || 'llama-3.3-70b-versatile')
+    : provider === 'mistral' ? (process.env.MISTRAL_MODEL || 'mistral-large-latest')
+    : provider === 'openai' ? (process.env.OPENAI_MODEL || 'gpt-4o-mini')
+    : (process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest');
+
+  // Log provider attempt start
+  logger?.info('provider', 'provider_attempt_start', {
+    provider,
+    model,
+    apiKeyPresent: !!apiKey,
+    apiKeyPrefix: apiKey ? apiKey.slice(0, 4) : undefined,
+  });
+
+  if (!apiKey) {
+    logger?.warn('provider', 'provider_skipped', {
+      provider,
+      reason: 'No API key configured',
+    });
+    return null;
+  }
+
+  const startTime = Date.now();
+  
   try {
     let raw: unknown | null = null;
+    
+    // Log prompt being sent (debug level for full details)
+    logger?.debug('provider', 'sending_prompt', {
+      provider,
+      prompt: prompt.substring(0, 200), // First 200 chars
+      systemPromptLength: SYSTEM_PROMPT.length,
+    });
+
     switch (provider) {
       case 'groq': raw = await callGroq(apiKey, prompt); break;
       case 'mistral': raw = await callMistral(apiKey, prompt); break;
       case 'openai': raw = await callOpenAI(apiKey, prompt); break;
       case 'anthropic': raw = await callAnthropic(apiKey, prompt); break;
     }
-    if (!raw) return null;
-    const cfg = ensureCompleteApp(parseConfig(raw));
-    if (!isUsableConfig(cfg, logger)) {
-      console.warn(`[ai] ${provider} returned a config without table/form pages — rejecting`);
+
+    const responseTime = Date.now() - startTime;
+
+    if (!raw) {
+      logger?.error('provider', 'provider_failed', new Error('Provider returned null or failed to parse JSON'), {
+        provider,
+        responseTime,
+      });
       return null;
     }
+
+    // Parse and validate the config
+    const cfg = ensureCompleteApp(parseConfig(raw, logger), logger);
+
+    // Log raw response structure
+    logger?.info('provider', 'provider_response', {
+      provider,
+      responseTime,
+      entityCount: cfg.entities.length,
+      pageCount: cfg.pages.length,
+      pageKinds: cfg.pages.map(p => p.root?.kind),
+      entities: cfg.entities.map(e => e.name),
+    });
+
+    // Validate with isUsableConfig
+    if (!isUsableConfig(cfg, logger)) {
+      logger?.warn('provider', 'config_rejected', {
+        provider,
+        reason: 'Config validation failed - missing required pages',
+        entityCount: cfg.entities.length,
+        pageCount: cfg.pages.length,
+      });
+      return null;
+    }
+
+    // Success
+    logger?.info('provider', 'provider_success', {
+      provider,
+      responseTime,
+      entityCount: cfg.entities.length,
+      pageCount: cfg.pages.length,
+    });
+
     return cfg;
   } catch (e) {
-    console.error(`[ai] ${provider} threw:`, e);
+    const responseTime = Date.now() - startTime;
+    logger?.error('provider', 'provider_error', e, {
+      provider,
+      responseTime,
+      errorType: e instanceof Error ? e.constructor.name : typeof e,
+    });
     return null;
   }
 }
 
-export async function generateConfigFromPrompt(prompt: string, logger?: { info: (component: string, event: string, data?: Record<string, unknown>) => void }): Promise<AppConfig> {
+export async function generateConfigFromPrompt(prompt: string, logger?: Logger): Promise<AppConfig> {
   const primaryProvider = getProvider();
 
   // Build a fallback chain: primary first, then any other provider that has a key.
@@ -301,17 +372,71 @@ export async function generateConfigFromPrompt(prompt: string, logger?: { info: 
     ...allProviders.filter((p) => p !== primaryProvider && getApiKey(p)),
   ];
 
-  for (const provider of chain) {
+  // Log generation start with provider chain order
+  logger?.info('provider', 'generation_start', {
+    prompt: prompt.substring(0, 200), // First 200 chars
+    primaryProvider,
+    providerChain: chain,
+    chainLength: chain.length,
+  });
+
+  for (let i = 0; i < chain.length; i++) {
+    const provider = chain[i];
+    
+    // Log each provider attempt in sequence
+    logger?.info('provider', 'trying_provider', {
+      provider,
+      attemptNumber: i + 1,
+      totalProviders: chain.length,
+    });
+
     const result = await tryProvider(provider, prompt, logger);
+    
     if (result) {
-      console.log(`[ai] generated via ${provider}: ${result.entities.length} entities, ${result.pages.length} pages`);
+      logger?.info('provider', 'generation_success', {
+        provider,
+        attemptNumber: i + 1,
+        entityCount: result.entities.length,
+        pageCount: result.pages.length,
+        entities: result.entities.map(e => e.name),
+        hasTheme: !!result.theme,
+      });
       return result;
+    }
+
+    // Log fallback transition if not the last provider
+    if (i < chain.length - 1) {
+      logger?.warn('provider', 'fallback_to_next', {
+        from: provider,
+        to: chain[i + 1],
+        reason: 'Provider failed or returned unusable config',
+      });
     }
   }
 
-  // All providers failed — use keyword-matched template fallback.
-  console.warn('[ai] all providers failed, using template fallback');
-  return ensureCompleteApp(parseConfig(fallbackForPrompt(prompt)));
+  // All providers failed — use keyword-matched template fallback
+  const template = fallbackForPrompt(prompt);
+  const templateId = TEMPLATES.find(t => t.config === template)?.id || 'unknown';
+  
+  logger?.warn('provider', 'template_fallback', {
+    reason: 'All AI providers failed',
+    providersTried: chain,
+    templateId,
+    prompt: prompt.substring(0, 100),
+  });
+
+  const finalConfig = ensureCompleteApp(parseConfig(template, logger), logger);
+
+  // Log final config summary
+  logger?.info('provider', 'generation_complete', {
+    source: 'template',
+    templateId,
+    entityCount: finalConfig.entities.length,
+    pageCount: finalConfig.pages.length,
+    hasTheme: !!finalConfig.theme,
+  });
+
+  return finalConfig;
 }
 
 export { findTemplate, TEMPLATES };

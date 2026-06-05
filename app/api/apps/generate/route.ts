@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'prompt is required' }, { status: 400 });
   }
 
-  const config = await generateConfigFromPrompt(prompt);
+  const config = await generateConfigFromPrompt(prompt, logger);
 
   // Log final config summary before return
   logger.info('api', 'config_summary', {

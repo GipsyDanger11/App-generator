@@ -1,8 +1,13 @@
-// Mistral AI integration. Given a user prompt describing an app, returns
-// a valid AppConfig JSON. Falls back to a curated template on any failure.
+// Multi-provider AI integration. Supports:
+//   - Groq      (free tier, fastest, llama-3.3-70b) — DEFAULT
+//   - OpenAI    (gpt-4o-mini)
+//   - Anthropic (claude-3-5-sonnet / haiku)
+//   - Mistral   (mistral-large-latest) — kept for back-compat
+// Switch with AI_PROVIDER env var: "groq" | "openai" | "anthropic" | "mistral".
+// Falls back to curated templates on any failure.
 
 import type { AppConfig } from './config/types';
-import { parseConfig } from './config/parser';
+import { parseConfig, ensureCompleteApp } from './config/parser';
 import { findTemplate, TEMPLATES } from './config/templates';
 
 const SYSTEM_PROMPT = `You are an AI that designs app configurations in JSON for a metadata-driven app runtime.
@@ -39,32 +44,33 @@ The runtime supports these shapes EXACTLY:
 HARD RULES (the runtime will break if you don't follow them):
 1. Every page's "root.kind" MUST be one of: hero, heading, text, stats, table, form, chart, card, button, list, iframe, divider, spacer.
 2. Every page's "root.props.entity" (if it has one) MUST exactly match an "entities[].name".
-3. ALWAYS include: a home page on "/", a table page for every main entity, and a form page for every main entity.
+3. ALWAYS include: a home page on "/", a table page for every main entity, and a form page for every main entity. The app will be unusable otherwise.
 4. ALWAYS include 2-3 stats items on the home page (or its own stats page) with valid "source.entity" matching an entity.
 5. Field "type" MUST be one of: string, text, number, boolean, date, datetime, email, select, multiselect, relation, json.
 6. Use "select" with an "options" array (each option has "value" and "label").
-7. Keep apps focused: 2-3 entities, 4-6 pages.
+7. Keep apps focused: 2-3 entities, 4-6 pages. The user wants a real, working app — not a landing page.
 
 For a habit tracker specifically:
 - Entity "Habit" with fields: name (string, required), description (text), icon (string), frequency (select: daily/weekly/weekdays), streak (number), bestStreak (number), lastCompleted (date), color (string).
 - Entity "Entry" with fields: habit (relation to Habit), date (date, required), completed (boolean), note (text).
 - Pages: "/" (hero + stats), "/habits" (table), "/habits/new" (form), "/entries" (table), "/entries/new" (form), "/progress" (chart).`;
 
-// Heuristic to pick a template if Mistral is unavailable or returns junk.
+// Heuristic to pick a template if no AI is configured or the call fails.
 function fallbackForPrompt(prompt: string): AppConfig {
   const p = prompt.toLowerCase();
   if (p.includes('habit')) return TEMPLATES.find((t) => t.id === 'habit-tracker')!.config;
   if (p.includes('crm') || p.includes('customer') || p.includes('deal')) return TEMPLATES.find((t) => t.id === 'crm')!.config;
-  if (p.includes('invent') || p.includes('stock') || p.includes('product')) return TEMPLATES.find((t) => t.id === 'inventory')!.config;
-  return TEMPLATES.find((t) => t.id === 'habit-tracker')!.config;
+  if (p.includes('invent') || p.includes('stock') || p.includes('product') || p.includes('warehouse')) return TEMPLATES.find((t) => t.id === 'inventory')!.config;
+  if (p.includes('task') || p.includes('todo') || p.includes('project')) return TEMPLATES.find((t) => t.id === 'tasks')!.config;
+  if (p.includes('book') || p.includes('recipe') || p.includes('movie') || p.includes('collection')) return TEMPLATES.find((t) => t.id === 'library')!.config;
+  if (p.includes('expense') || p.includes('budget') || p.includes('finance') || p.includes('money')) return TEMPLATES.find((t) => t.id === 'expenses')!.config;
+  return TEMPLATES.find((t) => t.id === 'blank')!.config;
 }
 
 function extractJson(content: unknown): unknown | null {
   if (typeof content === 'string') {
     const trimmed = content.trim();
-    // Try parsing the whole string first.
     try { return JSON.parse(trimmed); } catch {}
-    // Try to find a JSON block inside prose.
     const match = trimmed.match(/\{[\s\S]*\}/);
     if (match) {
       try { return JSON.parse(match[0]); } catch {}
@@ -74,13 +80,99 @@ function extractJson(content: unknown): unknown | null {
   return content ?? null;
 }
 
-export async function generateConfigFromPrompt(prompt: string): Promise<AppConfig> {
-  const apiKey = process.env.MISTRAL_API_KEY;
-  if (!apiKey) {
-    return parseConfig(fallbackForPrompt(prompt));
+// Provider-specific config
+type Provider = 'groq' | 'openai' | 'anthropic' | 'mistral';
+
+function getProvider(): Provider {
+  const p = (process.env.AI_PROVIDER ?? 'groq').toLowerCase();
+  if (p === 'groq' || p === 'openai' || p === 'anthropic' || p === 'mistral') return p;
+  return 'groq';
+}
+
+function getApiKey(provider: Provider): string | undefined {
+  switch (provider) {
+    case 'groq': return process.env.GROQ_API_KEY || process.env.MISTRAL_API_KEY;
+    case 'openai': return process.env.OPENAI_API_KEY;
+    case 'anthropic': return process.env.ANTHROPIC_API_KEY;
+    case 'mistral': return process.env.MISTRAL_API_KEY;
   }
-  const model = process.env.MISTRAL_MODEL || 'mistral-large-latest';
-  try {
+}
+
+async function callProvider(provider: Provider, apiKey: string, prompt: string): Promise<unknown | null> {
+  if (provider === 'groq') {
+    const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: `Build an app for: ${prompt}` },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+      }),
+    });
+    if (!res.ok) {
+      console.error('[groq] HTTP', res.status, await res.text().catch(() => ''));
+      return null;
+    }
+    const json: any = await res.json();
+    return extractJson(json.choices?.[0]?.message?.content);
+  }
+
+  if (provider === 'openai') {
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: `Build an app for: ${prompt}` },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+      }),
+    });
+    if (!res.ok) {
+      console.error('[openai] HTTP', res.status, await res.text().catch(() => ''));
+      return null;
+    }
+    const json: any = await res.json();
+    return extractJson(json.choices?.[0]?.message?.content);
+  }
+
+  if (provider === 'anthropic') {
+    const model = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest';
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 8192,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: `Build an app for: ${prompt}\n\nReturn ONLY a JSON object. No prose, no markdown fences.` }],
+        temperature: 0.2,
+      }),
+    });
+    if (!res.ok) {
+      console.error('[anthropic] HTTP', res.status, await res.text().catch(() => ''));
+      return null;
+    }
+    const json: any = await res.json();
+    const text = json.content?.[0]?.text ?? '';
+    return extractJson(text);
+  }
+
+  if (provider === 'mistral') {
+    const model = process.env.MISTRAL_MODEL || 'mistral-large-latest';
     const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
@@ -96,25 +188,35 @@ export async function generateConfigFromPrompt(prompt: string): Promise<AppConfi
     });
     if (!res.ok) {
       console.error('[mistral] HTTP', res.status, await res.text().catch(() => ''));
-      return parseConfig(fallbackForPrompt(prompt));
+      return null;
     }
     const json: any = await res.json();
-    const content = json.choices?.[0]?.message?.content;
-    const parsed = extractJson(content);
+    return extractJson(json.choices?.[0]?.message?.content);
+  }
+
+  return null;
+}
+
+export async function generateConfigFromPrompt(prompt: string): Promise<AppConfig> {
+  const provider = getProvider();
+  const apiKey = getApiKey(provider);
+  if (!apiKey) {
+    console.warn(`[ai] no API key for provider ${provider}, using template fallback`);
+    return ensureCompleteApp(parseConfig(fallbackForPrompt(prompt)));
+  }
+  try {
+    const parsed = await callProvider(provider, apiKey, prompt);
     if (!parsed) {
-      console.error('[mistral] returned unparseable JSON, using template fallback');
-      return parseConfig(fallbackForPrompt(prompt));
+      console.warn(`[ai] ${provider} returned unparseable output, using template fallback`);
+      return ensureCompleteApp(parseConfig(fallbackForPrompt(prompt)));
     }
     const safe = parseConfig(parsed);
-    // Final safety net: if the AI returned something with zero entities AND
-    // zero pages, treat it as a failure and use the template.
-    if (safe.entities.length === 0 && safe.pages.length <= 1) {
-      return parseConfig(fallbackForPrompt(prompt));
-    }
-    return safe;
+    // ALWAYS run the completeness pass — even if the AI returned something
+    // that *looks* valid, we make sure every entity has list+form pages.
+    return ensureCompleteApp(safe);
   } catch (e) {
-    console.error('[mistral] failed', e);
-    return parseConfig(fallbackForPrompt(prompt));
+    console.error(`[ai] ${provider} failed`, e);
+    return ensureCompleteApp(parseConfig(fallbackForPrompt(prompt)));
   }
 }
 

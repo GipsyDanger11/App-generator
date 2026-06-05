@@ -169,6 +169,94 @@ export function parseConfig(input: unknown): AppConfig {
   };
 }
 
+// Given an AppConfig, ensure every entity has a usable list (table) and
+// new-record (form) page. If the AI returned entities but only a hero home
+// page, this fills in the missing CRUD pages so the app is actually usable.
+// Returns a new AppConfig (does not mutate).
+export function ensureCompleteApp(cfg: AppConfig): AppConfig {
+  const entityNames = cfg.entities.map((e) => e.name);
+  if (entityNames.length === 0) return cfg;
+
+  const slugFor = (name: string) => {
+    const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    // Naive pluralizer: append "s" unless it already ends in "s".
+    return base.endsWith('s') ? base : base + 's';
+  };
+  const existingRoutes = new Set(cfg.pages.map((p) => p.route.toLowerCase()));
+
+  const augmented: PageDef[] = [...cfg.pages];
+
+  // 1. Make sure home has a stats section if any entity exists.
+  const homeIdx = augmented.findIndex((p) => p.route === '/');
+  const hasStats = augmented.some((p) => p.root?.kind === 'stats' || p.root?.children?.some((c) => c.kind === 'stats'));
+  if (homeIdx >= 0 && !hasStats && entityNames.length > 0) {
+    augmented.push({
+      id: 'home-stats',
+      route: '/',
+      title: 'Home',
+      root: {
+        kind: 'stats',
+        props: {
+          items: entityNames.slice(0, 4).map((name) => ({
+            label: `Total ${name.toLowerCase()}s`,
+            source: { entity: name, op: 'count' },
+          })),
+        },
+      },
+    });
+  }
+
+  // 2. For each entity, make sure a table page and a form page exist.
+  for (const e of cfg.entities) {
+    const slug = slugFor(e.name);
+    const listRoute = `/${slug}`;
+    const newRoute = `/${slug}/new`;
+    const hasList = existingRoutes.has(listRoute) || augmented.some((p) => p.root?.kind === 'table' && (p.root.props?.entity === e.name || p.entity === e.name));
+    if (!hasList) {
+      augmented.push({
+        id: `${slug}-list`,
+        route: listRoute,
+        title: e.labelPlural ?? `${e.name}s`,
+        entity: e.name,
+        root: { kind: 'table', props: { entity: e.name, pageSize: 20 } },
+      });
+    }
+    const hasForm = existingRoutes.has(newRoute) || augmented.some((p) => p.root?.kind === 'form' && (p.root.props?.entity === e.name || p.entity === e.name));
+    if (!hasForm) {
+      augmented.push({
+        id: `${slug}-new`,
+        route: newRoute,
+        title: `New ${e.label ?? e.name}`,
+        entity: e.name,
+        root: { kind: 'form', props: { entity: e.name, mode: 'create', successRoute: listRoute } },
+      });
+    }
+  }
+
+  // 3. If the home page is the *only* page and has no real content, swap
+  //    it to a proper hero with a real subtitle.
+  if (homeIdx >= 0 && augmented.length <= 2) {
+    const home = augmented[homeIdx];
+    if (home.root?.kind === 'hero') {
+      const subtitle = String(home.root.props?.subtitle ?? cfg.description ?? '');
+      if (!subtitle) {
+        augmented[homeIdx] = {
+          ...home,
+          root: {
+            kind: 'hero',
+            props: {
+              title: String(home.root.props?.title ?? cfg.name),
+              subtitle: cfg.description || `Manage your ${cfg.entities.length} ${cfg.entities.length === 1 ? 'entity' : 'entities'} from the sidebar.`,
+            },
+          },
+        };
+      }
+    }
+  }
+
+  return { ...cfg, pages: augmented };
+}
+
 // Helper used by API runtime to validate a record payload against an entity.
 export function buildEntityZodSchema(entity: EntityDef) {
   // Lightweight validator that doesn't import zod at the top level for

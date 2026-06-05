@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #7c3aed;
+}
+
+html, body { background: #f8fafc; }
+
+/* Component-style helpers used across the renderer */
+.card { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
+.input { @apply w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500; }
+.btn { @apply inline-flex items-center rounded-md bg-brand-600 text-white px-4 py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50; }
+.btn-secondary { @apply inline-flex items-center rounded-md bg-white text-slate-900 border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50; }

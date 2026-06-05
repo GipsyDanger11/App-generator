@@ -1,0 +1,10 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  experimental: {
+    serverActions: { bodySizeLimit: '10mb' }, // CSV uploads
+  },
+  images: { remotePatterns: [{ protocol: 'https', hostname: '**' }] },
+};
+
+export default nextConfig;

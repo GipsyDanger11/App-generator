@@ -1,7 +1,7 @@
 // Dynamic entity CRUD: list + create.
 // [entity] is matched against the app's config; unknown entities 404.
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, dbRetry } from '@/lib/prisma';
 import { findEntity, loadApp } from '@/lib/appLoader';
 import { buildEntityZodSchema } from '@/lib/config/parser';
 import { runWorkflows } from '@/lib/workflows';
@@ -18,10 +18,12 @@ export async function GET(req: Request, ctx: { params: { appId: string; entity: 
   const entity = findEntity(r.config, entityName);
   if (!entity) return NextResponse.json({ records: [] });
   try {
-    const records = await prisma.record.findMany({
-      where: { appId, entityName: entity.name },
-      orderBy: { createdAt: 'desc' },
-    });
+    const records = await dbRetry(() =>
+      prisma.record.findMany({
+        where: { appId, entityName: entity.name },
+        orderBy: { createdAt: 'desc' },
+      })
+    );
     return NextResponse.json(records);
   } catch (e) {
     return NextResponse.json({ error: 'Failed to list records', details: (e as Error).message }, { status: 500 });
@@ -46,9 +48,11 @@ export async function POST(req: Request, ctx: { params: { appId: string; entity:
     return NextResponse.json({ error: 'Validation failed', fieldErrors: result.errors }, { status: 422 });
   }
   try {
-    const record = await prisma.record.create({
-      data: { appId, entityName: entity.name, data: jsonInput(result.clean), createdBy: r.user.id },
-    });
+    const record = await dbRetry(() =>
+      prisma.record.create({
+        data: { appId, entityName: entity.name, data: jsonInput(result.clean), createdBy: r.user.id },
+      })
+    );
     // Run create workflows (fire-and-forget; errors are caught inside)
     void runWorkflows({ appId, appConfig: r.config, ownerId: r.user.id, triggerEntity: entity.name, triggerEvent: 'create', record: { id: record.id, ...(result.clean as object) } });
     return NextResponse.json(record, { status: 201 });

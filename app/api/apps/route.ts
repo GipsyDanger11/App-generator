@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, dbRetry } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
 import { parseConfig } from '@/lib/config/parser';
 import { slugify } from '@/lib/utils';
@@ -15,11 +15,13 @@ const createSchema = z.object({
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const apps = await prisma.app.findMany({
-    where: { ownerId: user.id },
-    orderBy: { updatedAt: 'desc' },
-    select: { id: true, name: true, slug: true, description: true, updatedAt: true, createdAt: true, defaultLocale: true, supportedLocales: true },
-  });
+  const apps = await dbRetry(() =>
+    prisma.app.findMany({
+      where: { ownerId: user.id },
+      orderBy: { updatedAt: 'desc' },
+      select: { id: true, name: true, slug: true, description: true, updatedAt: true, createdAt: true, defaultLocale: true, supportedLocales: true },
+    })
+  );
   return NextResponse.json(apps);
 }
 
@@ -34,15 +36,17 @@ export async function POST(req: Request) {
   const baseSlug = slugify(parsed.data.name) || 'app';
   let slug = baseSlug;
   let i = 1;
-  while (await prisma.app.findUnique({ where: { slug } })) { slug = `${baseSlug}-${i++}`; }
-  const app = await prisma.app.create({
-    data: {
-      name: parsed.data.name,
-      description: parsed.data.description ?? safe.description,
-      slug,
-      ownerId: user.id,
-      config: jsonInput(safe),
-    },
-  });
+  while (await dbRetry(() => prisma.app.findUnique({ where: { slug } }))) { slug = `${baseSlug}-${i++}`; }
+  const app = await dbRetry(() =>
+    prisma.app.create({
+      data: {
+        name: parsed.data.name,
+        description: parsed.data.description ?? safe.description,
+        slug,
+        ownerId: user.id,
+        config: jsonInput(safe),
+      },
+    })
+  );
   return NextResponse.json({ id: app.id, slug: app.slug });
 }

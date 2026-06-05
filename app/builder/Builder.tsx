@@ -26,6 +26,7 @@ export function Builder({ templates }: { templates: Tpl[] }) {
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewPageIdx, setPreviewPageIdx] = useState(0);
 
   async function call(payload: { prompt?: string; templateId?: string }) {
     setError(null); setLoading(true); setConfig(null);
@@ -39,6 +40,7 @@ export function Builder({ templates }: { templates: Tpl[] }) {
       const safe = parseConfig(j.config);
       setConfig(safe);
       setName(safe.name);
+      setPreviewPageIdx(0);
       setI18nContext({ i18n: safe.i18n, locale: 'en' });
     } catch (e) {
       setError((e as Error).message);
@@ -86,7 +88,7 @@ export function Builder({ templates }: { templates: Tpl[] }) {
         </header>
         <section className="relative z-10 max-w-6xl mx-auto px-4 pt-6 pb-24 text-center">
           <span className="inline-flex items-center gap-1 rounded-full bg-white/10 backdrop-blur px-3 py-1 text-xs font-medium border border-white/20">
-            <Wand2 className="h-3.5 w-3.5" /> Builder · powered by Mistral
+            <Wand2 className="h-3.5 w-3.5" /> Builder · powered by AI
           </span>
           <h1 className="mt-4 text-3xl md:text-4xl font-bold text-white">Build with AI</h1>
           <p className="text-purple-100/90 mt-1">Describe your app, or start from a template.</p>
@@ -155,11 +157,41 @@ export function Builder({ templates }: { templates: Tpl[] }) {
               </ul>
             </div>
             <div className="card p-4 md:col-span-2">
-              <h2 className="font-semibold mb-2">Live preview</h2>
-              <p className="text-xs text-slate-500 mb-3">Rendered by the same engine that runs in production.</p>
-              <div className="border border-purple-100 rounded-md p-4 bg-gradient-to-br from-purple-50 to-white min-h-[300px]">
-                <Renderer node={config.pages[0]?.root ?? null} appId="preview" />
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-semibold">Live preview</h2>
+                <span className="text-xs text-slate-400">{config.pages.length} page{config.pages.length !== 1 ? 's' : ''} generated</span>
               </div>
+              {/* Page tabs — one per page, identified by route */}
+              {config.pages.length > 1 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {config.pages.map((p, idx) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setPreviewPageIdx(idx)}
+                      className={`px-2.5 py-1 rounded text-xs font-mono transition ${
+                        previewPageIdx === idx
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
+                      }`}
+                    >
+                      {p.route}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="border border-purple-100 rounded-md p-4 bg-gradient-to-br from-purple-50 to-white min-h-[300px]">
+                <Renderer
+                  node={config.pages[previewPageIdx]?.root ?? null}
+                  appId="preview"
+                  entityName={config.pages[previewPageIdx]?.entity}
+                />
+              </div>
+              <p className="text-xs text-slate-400 mt-2">
+                Previewing: <span className="font-medium text-slate-600">{config.pages[previewPageIdx]?.title ?? config.pages[previewPageIdx]?.route}</span>
+                {config.pages[previewPageIdx]?.entity && (
+                  <span className="ml-1 text-purple-500">· entity: {config.pages[previewPageIdx]?.entity}</span>
+                )}
+              </p>
             </div>
           </div>
         )}

@@ -1,6 +1,6 @@
 // Single record: GET / PATCH / DELETE
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, dbRetry } from '@/lib/prisma';
 import { findEntity, loadApp } from '@/lib/appLoader';
 import { buildEntityZodSchema } from '@/lib/config/parser';
 import { runWorkflows } from '@/lib/workflows';
@@ -9,7 +9,7 @@ import { unwrapParams, pickString } from '@/lib/routeParams';
 
 async function loadRecord(appId: string, entityName: string, id: string) {
   if (!id) return null;
-  const rec = await prisma.record.findUnique({ where: { id } });
+  const rec = await dbRetry(() => prisma.record.findUnique({ where: { id } }));
   if (!rec || rec.appId !== appId || rec.entityName.toLowerCase() !== entityName.toLowerCase()) return null;
   return rec;
 }
@@ -49,7 +49,9 @@ export async function PATCH(req: Request, ctx: { params: { appId: string; entity
   const result = validate(merged);
   if (!result.ok) return NextResponse.json({ error: 'Validation failed', fieldErrors: result.errors }, { status: 422 });
   try {
-    const rec = await prisma.record.update({ where: { id }, data: { data: jsonInput(result.clean) } });
+    const rec = await dbRetry(() =>
+      prisma.record.update({ where: { id }, data: { data: jsonInput(result.clean) } })
+    );
     void runWorkflows({ appId, appConfig: r.config, ownerId: r.user.id, triggerEntity: entity.name, triggerEvent: 'update', record: { id: rec.id, ...(result.clean as object) } });
     return NextResponse.json(rec);
   } catch (e) {
@@ -70,7 +72,7 @@ export async function DELETE(_req: Request, ctx: { params: { appId: string; enti
   const existing = await loadRecord(appId, entity.name, id);
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   try {
-    await prisma.record.delete({ where: { id } });
+    await dbRetry(() => prisma.record.delete({ where: { id } }));
     void runWorkflows({ appId, appConfig: r.config, ownerId: r.user.id, triggerEntity: entity.name, triggerEvent: 'delete', record: { id, ...((existing.data as Record<string, unknown>) ?? {}) } });
     return NextResponse.json({ ok: true });
   } catch (e) {

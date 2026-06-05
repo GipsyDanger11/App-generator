@@ -1,5 +1,5 @@
 // Helper: load an app + parse its config. Always returns a safe config.
-import { prisma } from './prisma';
+import { prisma, dbRetry } from './prisma';
 import { parseConfig } from './config/parser';
 import type { AppConfig, EntityDef } from './config/types';
 import { getSessionUser } from './session';
@@ -10,7 +10,7 @@ export async function loadApp(appId: string | null | undefined, opts: { requireO
   if (!user) return { error: 'Unauthorized', status: 401 } as const;
   let app;
   try {
-    app = await prisma.app.findUnique({ where: { id: appId } });
+    app = await dbRetry(() => prisma.app.findUnique({ where: { id: appId } }));
   } catch (e) {
     return { error: 'Database error', details: (e as Error).message, status: 500 } as const;
   }

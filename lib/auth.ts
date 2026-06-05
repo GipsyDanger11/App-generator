@@ -1,4 +1,4 @@
-import type { NextAuthOptions, Session } from 'next-auth';
+import type { NextAuthOptions } from 'next-auth';
 import type { JWT } from 'next-auth/jwt';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -6,6 +6,10 @@ import GoogleProvider from 'next-auth/providers/google';
 import GitHubProvider from 'next-auth/providers/github';
 import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
+
+interface AppUser { id?: string; name?: string | null; email?: string | null; image?: string | null }
+interface AppSession { user?: AppUser; expires: string }
+interface AppToken extends JWT { uid?: string }
 
 const providers: NextAuthOptions['providers'] = [
   CredentialsProvider({
@@ -49,17 +53,12 @@ export const authOptions: NextAuthOptions = {
   pages: { signIn: '/login' },
   providers,
   callbacks: {
-    async jwt({ token, user }): Promise<JWT> {
-      if (user && (user as { id?: string }).id) {
-        (token as JWT & { uid?: string }).uid = (user as { id: string }).id;
-      }
+    async jwt({ token, user }: { token: AppToken; user?: AppUser }): Promise<AppToken> {
+      if (user?.id) token.uid = user.id;
       return token;
     },
-    async session({ session, token }): Promise<Session> {
-      const uid = (token as JWT & { uid?: string }).uid;
-      if (session.user && uid) {
-        (session.user as { id?: string }).id = uid;
-      }
+    async session({ session, token }: { session: AppSession; token: AppToken }): Promise<AppSession> {
+      if (session.user && token.uid) session.user.id = token.uid;
       return session;
     },
   },

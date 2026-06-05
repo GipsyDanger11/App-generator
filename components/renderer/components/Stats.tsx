@@ -40,9 +40,12 @@ function LiveStat(props: { label: string; appId: string; source: StatSource; t: 
   const entity = source.entity;
   const field = source.field;
   const op = source.op || 'count';
-  const [val, setVal] = React.useState<string>('\u2014');
+  const isPreview = appId === 'preview';
+  const [val, setVal] = React.useState<string>(isPreview ? '—' : '\u2014');
 
   React.useEffect(() => {
+    // In builder preview there is no real app — show a dash placeholder.
+    if (isPreview) { setVal('—'); return; }
     const target: string = (entity || fallbackEntity || '') as string;
     if (!target) { setVal('\u2014'); return; }
     let cancelled = false;
@@ -77,7 +80,7 @@ function LiveStat(props: { label: string; appId: string; source: StatSource; t: 
     }
     run();
     return function cleanup() { cancelled = true; };
-  }, [appId, entity, field, op, fallbackEntity]);
+  }, [appId, isPreview, entity, field, op, fallbackEntity]);
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4">

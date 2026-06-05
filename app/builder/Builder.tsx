@@ -26,7 +26,7 @@ export function Builder({ templates }: { templates: Tpl[] }) {
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previewPageIdx, setPreviewPageIdx] = useState(0);
+  const [previewRoute, setPreviewRoute] = useState('/');
 
   async function call(payload: { prompt?: string; templateId?: string }) {
     setError(null); setLoading(true); setConfig(null);
@@ -40,7 +40,7 @@ export function Builder({ templates }: { templates: Tpl[] }) {
       const safe = parseConfig(j.config);
       setConfig(safe);
       setName(safe.name);
-      setPreviewPageIdx(0);
+      setPreviewRoute('/');
       setI18nContext({ i18n: safe.i18n, locale: 'en' });
     } catch (e) {
       setError((e as Error).message);
@@ -72,6 +72,11 @@ export function Builder({ templates }: { templates: Tpl[] }) {
       router.push(`/apps/${j.id}`);
     } catch (e) { setError((e as Error).message); } finally { setSaving(false); }
   }
+
+  // Compute unique routes for the preview tabs (one tab per route)
+  const uniquePreviewRoutes = config
+    ? Array.from(new Map(config.pages.map((p) => [p.route, p])).values())
+    : [];
 
   return (
     <main>
@@ -159,17 +164,17 @@ export function Builder({ templates }: { templates: Tpl[] }) {
             <div className="card p-4 md:col-span-2">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-semibold">Live preview</h2>
-                <span className="text-xs text-slate-400">{config.pages.length} page{config.pages.length !== 1 ? 's' : ''} generated</span>
+                <span className="text-xs text-slate-400">{uniquePreviewRoutes.length} route{uniquePreviewRoutes.length !== 1 ? 's' : ''} · {config.pages.length} page section{config.pages.length !== 1 ? 's' : ''}</span>
               </div>
-              {/* Page tabs — one per page, identified by route */}
-              {config.pages.length > 1 && (
+              {/* Page tabs — one per unique route */}
+              {uniquePreviewRoutes.length > 1 && (
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {config.pages.map((p, idx) => (
+                  {uniquePreviewRoutes.map((p) => (
                     <button
-                      key={p.id}
-                      onClick={() => setPreviewPageIdx(idx)}
+                      key={p.route}
+                      onClick={() => setPreviewRoute(p.route)}
                       className={`px-2.5 py-1 rounded text-xs font-mono transition ${
-                        previewPageIdx === idx
+                        previewRoute === p.route
                           ? 'bg-purple-600 text-white'
                           : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
                       }`}
@@ -179,18 +184,22 @@ export function Builder({ templates }: { templates: Tpl[] }) {
                   ))}
                 </div>
               )}
-              <div className="border border-purple-100 rounded-md p-4 bg-gradient-to-br from-purple-50 to-white min-h-[300px]">
-                <Renderer
-                  node={config.pages[previewPageIdx]?.root ?? null}
-                  appId="preview"
-                  entityName={config.pages[previewPageIdx]?.entity}
-                />
+              <div className="border border-purple-100 rounded-md p-4 bg-gradient-to-br from-purple-50 to-white min-h-[300px] space-y-4">
+                {config.pages
+                  .filter((p) => p.route === previewRoute)
+                  .map((p) => (
+                    <Renderer
+                      key={p.id}
+                      node={p.root}
+                      appId="preview"
+                      entityName={p.entity}
+                    />
+                  ))
+                }
               </div>
               <p className="text-xs text-slate-400 mt-2">
-                Previewing: <span className="font-medium text-slate-600">{config.pages[previewPageIdx]?.title ?? config.pages[previewPageIdx]?.route}</span>
-                {config.pages[previewPageIdx]?.entity && (
-                  <span className="ml-1 text-purple-500">· entity: {config.pages[previewPageIdx]?.entity}</span>
-                )}
+                Previewing route: <span className="font-medium text-slate-600">{previewRoute}</span>
+                <span className="ml-2 text-purple-400">· Tables and forms need a saved app to load data</span>
               </p>
             </div>
           </div>

@@ -11,9 +11,21 @@ interface EntitySchema { fields: Array<{ name: string; label?: string; type: str
 export function Table({ node, appId, entityName }: CompProps) {
   const entity = (node.props?.entity as string) ?? entityName;
   const pageSize = Math.min(Math.max(Number(node.props?.pageSize ?? 20), 1), 200);
+  const isPreview = appId === 'preview';
   const [state, setState] = React.useState<{ loading: boolean; error: string | null; rows: Array<Record<string, unknown>>; schema: EntitySchema | null }>(
-    { loading: true, error: null, rows: [], schema: null },
+    { loading: !isPreview, error: null, rows: [], schema: null },
   );
+
+  // In the builder preview there is no real saved app — skip the fetch and
+  // show a placeholder so the user can see the table structure.
+  if (isPreview) {
+    return (
+      <div className="rounded-lg border border-dashed border-purple-300 bg-purple-50/40 p-6 text-center">
+        <div className="text-sm font-medium text-purple-700 mb-1">Table · <code className="text-xs bg-purple-100 px-1 rounded">{entity}</code></div>
+        <p className="text-xs text-slate-500">Save the app to see live data here.</p>
+      </div>
+    );
+  }
   const [q, setQ] = React.useState('');
   const [page, setPage] = React.useState(0);
 

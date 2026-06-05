@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Renderer, ErrorState } from '@/components/renderer/Renderer';
 import { setI18nContext } from '@/components/renderer/useT';
 import { listLocales, translate } from '@/lib/i18n';
@@ -18,10 +18,17 @@ interface Props {
   config: AppConfig;
   defaultLocale: string;
   supportedLocales: string[];
+  themeColor?: string;
+  themeAccent?: string;
 }
 
 export function AppRunner(props: Props) {
   const [locale, setLocale] = useState(props.defaultLocale);
+
+  // Apply theme colors as CSS custom properties so every component picks them up.
+  const themeStyle = props.themeColor
+    ? ({ '--app-primary': props.themeColor, '--app-accent': props.themeAccent ?? props.themeColor } as React.CSSProperties)
+    : undefined;
   const [route, setRoute] = useState<string>('/');
   const [page, setPage] = useState<'preview' | 'config' | 'export' | 'deploy'>('preview');
   const [navOpen, setNavOpen] = useState(false);
@@ -51,6 +58,14 @@ export function AppRunner(props: Props) {
   }, []);
 
   const pages = props.config.pages ?? [];
+
+  // Deduplicate pages by (route, kind) so the same route with multiple
+  // page definitions (e.g. home hero + home stats) is collapsed into one
+  // entry in the sidebar. We keep the FIRST occurrence per unique route.
+  const uniqueRoutes = Array.from(
+    new Map(pages.map((p) => [p.route, p])).entries()
+  ).map(([, p]) => p);
+
   const currentPage = useMemo(() => {
     if (route === '/') return pages.find((p) => p.route === '/') ?? pages[0];
     return pages.find((p) => p.route === route) ?? pages[0];
@@ -60,9 +75,12 @@ export function AppRunner(props: Props) {
   const locales = listLocales(props.config.i18n, props.supportedLocales);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={themeStyle}>
       {/* Top bar with gradient */}
-      <header className="bg-gradient-to-r from-purple-700 via-fuchsia-700 to-purple-800 text-white shadow-lg">
+      <header
+        className="text-white shadow-lg"
+        style={{ background: 'linear-gradient(to right, var(--app-primary, #6d28d9), color-mix(in srgb, var(--app-primary, #6d28d9) 70%, var(--app-accent, #c026d3) 30%), var(--app-accent, #6d28d9))' }}
+      >
         <div className="max-w-7xl mx-auto flex items-center gap-2 px-4 h-14">
           <button onClick={() => setNavOpen((v) => !v)} className="md:hidden p-2 -ml-2 rounded hover:bg-white/10" aria-label="Menu">
             {navOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -127,8 +145,8 @@ export function AppRunner(props: Props) {
         <aside className={`${navOpen ? 'block' : 'hidden'} md:block w-60 shrink-0 border-r border-purple-100 bg-white`}>
           <nav className="p-3 space-y-1">
             <div className="text-xs font-medium uppercase text-purple-500 px-2 pt-2">Pages</div>
-            {pages.map((p) => (
-              <button key={p.id} onClick={() => { setRoute(p.route); setNavOpen(false); setPage('preview'); }} className={`w-full text-left px-2 py-1.5 rounded text-sm transition ${route === p.route && page === 'preview' ? 'bg-purple-100 text-purple-900 font-medium' : 'text-slate-700 hover:bg-purple-50'}`}>
+            {uniqueRoutes.map((p) => (
+              <button key={p.route} onClick={() => { setRoute(p.route); setNavOpen(false); setPage('preview'); }} className={`w-full text-left px-2 py-1.5 rounded text-sm transition ${route === p.route && page === 'preview' ? 'bg-purple-100 text-purple-900 font-medium' : 'text-slate-700 hover:bg-purple-50'}`}>
                 {translate(props.config.i18n, locale, `page.${p.id}.title`, p.title ?? p.route)}
               </button>
             ))}
@@ -151,12 +169,16 @@ export function AppRunner(props: Props) {
         {/* Main content */}
         <main className="flex-1 px-4 py-6 md:py-8 bg-gradient-to-b from-purple-50/30 to-white">
           {page === 'preview' && (
-            <div className="max-w-5xl mx-auto">
-              {currentPage ? (
-                <Renderer node={currentPage.root} appId={props.appId} entityName={currentPage.entity} />
-              ) : (
-                <ErrorState message="This app has no pages." />
-              )}
+            <div className="max-w-5xl mx-auto space-y-6">
+              {/* Render every page whose route matches — home can have hero + stats stacked */}
+              {pages.filter((p) => p.route === route).length > 0
+                ? pages
+                    .filter((p) => p.route === route)
+                    .map((p) => (
+                      <Renderer key={p.id} node={p.root} appId={props.appId} entityName={p.entity ?? currentPage?.entity} />
+                    ))
+                : <ErrorState message="This app has no pages." />
+              }
             </div>
           )}
           {page === 'config' && <ConfigView appId={props.appId} initialConfig={props.config} />}

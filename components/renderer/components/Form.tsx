@@ -21,8 +21,19 @@ export function Form({ node, appId, entityName }: CompProps) {
   const mode = (node.props?.mode as string) === 'edit' ? 'edit' : 'create';
   const recordId = (node.props?.recordId as string) ?? undefined;
   const successRoute = (node.props?.successRoute as string) ?? undefined;
+  const isPreview = appId === 'preview';
   const [schema, setSchema] = React.useState<EntitySchema | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(!isPreview);
+
+  // Builder preview — no saved app yet, just show a placeholder.
+  if (isPreview) {
+    return (
+      <div className="rounded-lg border border-dashed border-purple-300 bg-purple-50/40 p-6 text-center">
+        <div className="text-sm font-medium text-purple-700 mb-1">Form · <code className="text-xs bg-purple-100 px-1 rounded">{entity}</code></div>
+        <p className="text-xs text-slate-500">Save the app to create records here.</p>
+      </div>
+    );
+  }
   const [error, setError] = React.useState<string | null>(null);
   const [values, setValues] = React.useState<Record<string, unknown>>({});
   const [submitting, setSubmitting] = React.useState(false);

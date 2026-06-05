@@ -182,23 +182,50 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
     // Naive pluralizer: append "s" unless it already ends in "s".
     return base.endsWith('s') ? base : base + 's';
   };
-  const existingRoutes = new Set(cfg.pages.map((p) => p.route.toLowerCase()));
 
   const augmented: PageDef[] = [...cfg.pages];
 
-  // 1. Make sure home has a stats section if any entity exists.
-  const homeIdx = augmented.findIndex((p) => p.route === '/');
+  // Helper: recompute routes from the CURRENT augmented array (not original)
+  const hasRoute = (route: string) => augmented.some((p) => p.route.toLowerCase() === route.toLowerCase());
+  const hasTableForEntity = (entityName: string) =>
+    augmented.some((p) => p.root?.kind === 'table' && (
+      (p.root.props?.entity as string | undefined)?.toLowerCase() === entityName.toLowerCase() ||
+      p.entity?.toLowerCase() === entityName.toLowerCase()
+    ));
+  const hasFormForEntity = (entityName: string) =>
+    augmented.some((p) => p.root?.kind === 'form' && (
+      (p.root.props?.entity as string | undefined)?.toLowerCase() === entityName.toLowerCase() ||
+      p.entity?.toLowerCase() === entityName.toLowerCase()
+    ));
+
+  // 1. Make sure there is a home page.
+  if (!hasRoute('/')) {
+    augmented.unshift({
+      id: 'home',
+      route: '/',
+      title: cfg.name,
+      root: {
+        kind: 'hero',
+        props: {
+          title: cfg.name,
+          subtitle: cfg.description || `Manage your data with ${cfg.name}.`,
+        },
+      },
+    });
+  }
+
+  // 2. Make sure home has a stats section.
   const hasStats = augmented.some((p) => p.root?.kind === 'stats' || p.root?.children?.some((c) => c.kind === 'stats'));
-  if (homeIdx >= 0 && !hasStats && entityNames.length > 0) {
+  if (!hasStats && entityNames.length > 0) {
     augmented.push({
       id: 'home-stats',
       route: '/',
-      title: 'Home',
+      title: 'Dashboard',
       root: {
         kind: 'stats',
         props: {
           items: entityNames.slice(0, 4).map((name) => ({
-            label: `Total ${name.toLowerCase()}s`,
+            label: `Total ${(cfg.entities.find(e => e.name === name)?.labelPlural ?? `${name}s`)}`,
             source: { entity: name, op: 'count' },
           })),
         },
@@ -206,13 +233,13 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
     });
   }
 
-  // 2. For each entity, make sure a table page and a form page exist.
+  // 3. For each entity, make sure a table page and a form page exist.
   for (const e of cfg.entities) {
     const slug = slugFor(e.name);
     const listRoute = `/${slug}`;
     const newRoute = `/${slug}/new`;
-    const hasList = existingRoutes.has(listRoute) || augmented.some((p) => p.root?.kind === 'table' && (p.root.props?.entity === e.name || p.entity === e.name));
-    if (!hasList) {
+
+    if (!hasTableForEntity(e.name)) {
       augmented.push({
         id: `${slug}-list`,
         route: listRoute,
@@ -221,8 +248,8 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
         root: { kind: 'table', props: { entity: e.name, pageSize: 20 } },
       });
     }
-    const hasForm = existingRoutes.has(newRoute) || augmented.some((p) => p.root?.kind === 'form' && (p.root.props?.entity === e.name || p.entity === e.name));
-    if (!hasForm) {
+
+    if (!hasFormForEntity(e.name)) {
       augmented.push({
         id: `${slug}-new`,
         route: newRoute,
@@ -233,28 +260,29 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
     }
   }
 
-  // 3. If the home page is the *only* page and has no real content, swap
-  //    it to a proper hero with a real subtitle.
-  if (homeIdx >= 0 && augmented.length <= 2) {
-    const home = augmented[homeIdx];
-    if (home.root?.kind === 'hero') {
-      const subtitle = String(home.root.props?.subtitle ?? cfg.description ?? '');
-      if (!subtitle) {
-        augmented[homeIdx] = {
-          ...home,
-          root: {
-            kind: 'hero',
-            props: {
-              title: String(home.root.props?.title ?? cfg.name),
-              subtitle: cfg.description || `Manage your ${cfg.entities.length} ${cfg.entities.length === 1 ? 'entity' : 'entities'} from the sidebar.`,
-            },
-          },
-        };
-      }
-    }
-  }
+  // 4. Ensure the theme has a primary color — generate one deterministically
+  //    from the app name if the AI didn't provide one.
+  const THEME_PALETTE = [
+    { primary: '#7c3aed', accent: '#a855f7' }, // purple
+    { primary: '#2563eb', accent: '#60a5fa' }, // blue
+    { primary: '#059669', accent: '#34d399' }, // green
+    { primary: '#dc2626', accent: '#f87171' }, // red
+    { primary: '#d97706', accent: '#fbbf24' }, // amber
+    { primary: '#0891b2', accent: '#22d3ee' }, // cyan
+    { primary: '#be185d', accent: '#f472b6' }, // pink
+    { primary: '#7c3aed', accent: '#818cf8' }, // indigo
+  ];
+  const themeIdx = cfg.name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % THEME_PALETTE.length;
+  const defaultTheme = THEME_PALETTE[themeIdx];
 
-  return { ...cfg, pages: augmented };
+  const theme = {
+    primary: cfg.theme?.primary ?? defaultTheme.primary,
+    accent: cfg.theme?.accent ?? defaultTheme.accent,
+    logoText: cfg.theme?.logoText ?? cfg.name,
+    faviconEmoji: cfg.theme?.faviconEmoji,
+  };
+
+  return { ...cfg, pages: augmented, theme };
 }
 
 // Helper used by API runtime to validate a record payload against an entity.

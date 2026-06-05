@@ -13,7 +13,17 @@ export function Chart({ node, appId, entityName }: CompProps) {
   const field = node.props?.field as string | undefined;
   const groupBy = node.props?.groupBy as string | undefined;
   const height = Math.min(Math.max(Number(node.props?.height ?? 220), 80), 600);
-  const [state, setState] = React.useState<{ loading: boolean; error: string | null; rows: Array<Record<string, unknown>> }>({ loading: true, error: null, rows: [] });
+  const isPreview = appId === 'preview';
+  const [state, setState] = React.useState<{ loading: boolean; error: string | null; rows: Array<Record<string, unknown>> }>({ loading: !isPreview, error: null, rows: [] });
+
+  if (isPreview) {
+    return (
+      <div className="rounded-lg border border-dashed border-purple-300 bg-purple-50/40 p-6 text-center">
+        <div className="text-sm font-medium text-purple-700 mb-1">Chart · <code className="text-xs bg-purple-100 px-1 rounded">{entity}</code></div>
+        <p className="text-xs text-slate-500">Save the app to see live chart data here.</p>
+      </div>
+    );
+  }
   React.useEffect(() => {
     if (!entity) { setState({ loading: false, error: 'No entity bound', rows: [] }); return; }
     let cancelled = false;

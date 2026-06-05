@@ -37,6 +37,8 @@ export default async function AppPage({ params }: { params: ParamsInput }) {
       config={config}
       defaultLocale={app.defaultLocale}
       supportedLocales={app.supportedLocales}
+      themeColor={config.theme?.primary}
+      themeAccent={config.theme?.accent}
     />
   );
 }

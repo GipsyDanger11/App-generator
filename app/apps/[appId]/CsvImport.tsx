@@ -32,18 +32,18 @@ export function CsvImport({ appId, entity, onClose }: { appId: string; entity: s
 
   async function onFile(file: File) {
     setError(null); setResult(null);
-    Papa.parse(file, {
+    Papa.parse<Record<string, string>>(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (res) => {
-        const data = res.data as Array<Record<string, string>>;
-        const hdrs = (res.meta.fields ?? []).filter(Boolean);
+      complete: (res: Papa.ParseResult<Record<string, string>>) => {
+        const data = res.data;
+        const hdrs = (res.meta.fields ?? []).filter((h): h is string => typeof h === 'string' && h.length > 0);
         setHeaders(hdrs);
         setRows(data);
         // load fields then mapping
         setTimeout(loadFields, 0);
       },
-      error: (err) => setError(err.message),
+      error: (err: Error) => setError(err.message),
     });
   }
 

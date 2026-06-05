@@ -6,7 +6,6 @@ import { NextResponse } from 'next/server';
 import { Octokit } from '@octokit/rest';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
 import { loadApp } from '@/lib/appLoader';
 import { generateProjectFiles } from '@/lib/export/projectTemplate';
 import { slugify } from '@/lib/utils';

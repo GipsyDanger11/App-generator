@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { Renderer, LoadingState, ErrorState } from '@/components/renderer/Renderer';
+import { Renderer, ErrorState } from '@/components/renderer/Renderer';
 import { setI18nContext } from '@/components/renderer/useT';
 import { listLocales, translate } from '@/lib/i18n';
-import { Bell, Globe, Settings2, Download, Code2, Menu, X, Plus, Upload } from 'lucide-react';
+import { Bell, Globe, Menu, X, Upload } from 'lucide-react';
 import type { AppConfig } from '@/lib/config/types';
 import { CsvImport } from './CsvImport';
 import { ConfigView } from './ConfigView';

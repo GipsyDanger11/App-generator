@@ -57,7 +57,7 @@ export function Form({ node, appId, entityName }: CompProps) {
     return () => { cancelled = true; };
   }, [appId, entity, mode, recordId]);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!schema) return;
     setSubmitting(true); setFieldErrors({}); setError(null);

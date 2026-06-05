@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { findEntity, loadApp } from '@/lib/appLoader';
 
 export async function GET(_req: Request, { params }: { params: { appId: string; entity: string } }) {

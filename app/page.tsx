@@ -54,7 +54,7 @@ export default async function HomePage() {
         <section className="max-w-6xl mx-auto px-4 pb-16">
           <h2 className="text-sm font-medium uppercase tracking-wide text-slate-500 mb-3">Your recent apps</h2>
           <div className="grid sm:grid-cols-3 gap-3">
-            {apps.map((a) => (
+            {apps.map((a: { id: string; name: string; slug: string }) => (
               <Link key={a.id} href={`/apps/${a.id}`} className="card p-4 hover:border-brand-500 transition">
                 <div className="font-medium">{a.name}</div>
                 <div className="text-xs text-slate-500 mt-1">/{a.slug}</div>

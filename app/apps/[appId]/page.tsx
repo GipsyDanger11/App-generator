@@ -7,6 +7,7 @@ import { AppRunner } from './AppRunner';
 export default async function AppPage({ params }: { params: { appId: string } }) {
   const user = await getSessionUser();
   if (!user) redirect('/login');
+  if (!user.id) redirect('/login');
   const app = await prisma.app.findUnique({ where: { id: params.appId } });
   if (!app) notFound();
   // Only owner can manage. View-only not implemented.

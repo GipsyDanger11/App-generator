@@ -1,4 +1,4 @@
-import type { NextAuthOptions } from 'next-auth';
+import type { NextAuthOptions, Session } from 'next-auth';
 import type { JWT } from 'next-auth/jwt';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -49,13 +49,17 @@ export const authOptions: NextAuthOptions = {
   pages: { signIn: '/login' },
   providers,
   callbacks: {
-    async jwt({ token, user }: { token: JWT; user?: { id?: string } }) {
-      if (user?.id) (token as JWT & { uid?: string }).uid = user.id;
+    async jwt({ token, user }): Promise<JWT> {
+      if (user && (user as { id?: string }).id) {
+        (token as JWT & { uid?: string }).uid = (user as { id: string }).id;
+      }
       return token;
     },
-    async session({ session, token }: { session: { user?: { id?: string } }; token: JWT }) {
+    async session({ session, token }): Promise<Session> {
       const uid = (token as JWT & { uid?: string }).uid;
-      if (session.user && uid) session.user.id = uid;
+      if (session.user && uid) {
+        (session.user as { id?: string }).id = uid;
+      }
       return session;
     },
   },

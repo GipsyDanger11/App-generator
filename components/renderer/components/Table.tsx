@@ -168,11 +168,11 @@ function TablePreview({ entity, pageSize, columns }: { entity: any; pageSize: nu
     ? columns.map(c => entity.fields.find((f: any) => f.name === c)).filter(Boolean)
     : entity.fields.filter((f: any) => f.showInList !== false).slice(0, 6);
 
-  // Generate 3 mock rows
-  const mockRows = [1, 2, 3].map(i => {
+  // Generate 5 mock rows for a richer preview
+  const mockRows = [1, 2, 3, 4, 5].map(i => {
     const row: Record<string, any> = { id: i };
     entity.fields.forEach((f: any) => {
-      row[f.name] = generateMockValue(f.type, f.name, i);
+      row[f.name] = generateMockValue(f.type, f.name, i, f.options);
     });
     return row;
   });
@@ -235,35 +235,77 @@ function TablePreview({ entity, pageSize, columns }: { entity: any; pageSize: nu
 }
 
 // Generate realistic mock values based on field type and name
-function generateMockValue(type: string, fieldName: string, seed: number): any {
+function generateMockValue(type: string, fieldName: string, seed: number, options?: {value: string; label: string}[]): any {
   const name = fieldName.toLowerCase();
-  
-  if (type === 'boolean') return seed % 2 === 0;
-  if (type === 'number') return seed * 100 + Math.floor(Math.random() * 50);
-  if (type === 'date') return new Date(2024, 0, seed).toISOString().split('T')[0];
-  if (type === 'datetime') return new Date(2024, 0, seed, 10 + seed, 30).toISOString();
-  
-  if (type === 'select') {
-    const options = ['Active', 'Pending', 'Completed', 'Archived'];
-    return options[seed % options.length];
+
+  // Select — always use actual defined options
+  if (type === 'select' && options && options.length > 0) {
+    return options[seed % options.length].label;
   }
-  
-  if (type === 'multiselect') {
-    return ['Tag' + seed, 'Option' + (seed + 1)];
+  if (type === 'multiselect' && options && options.length > 0) {
+    return [options[seed % options.length].label, options[(seed + 1) % options.length].label].join(', ');
   }
-  
-  // String types - generate based on field name
-  if (name.includes('email')) return `user${seed}@example.com`;
-  if (name.includes('phone')) return `+1 (555) ${100 + seed}0-${1000 + seed}`;
-  if (name.includes('name') || name.includes('title')) return ['Alice Johnson', 'Bob Smith', 'Carol Martinez'][seed - 1] || 'User ' + seed;
-  if (name.includes('desc') || name.includes('note')) return `Sample description for item ${seed}. This shows what the content would look like.`;
-  if (name.includes('url') || name.includes('website')) return `https://example${seed}.com`;
-  if (name.includes('address')) return `${seed}23 Main Street`;
-  if (name.includes('city')) return ['New York', 'Los Angeles', 'Chicago'][seed - 1] || 'City';
-  if (name.includes('amount') || name.includes('price')) return '$' + (seed * 50 + 99);
-  if (name.includes('status')) return ['Active', 'Inactive', 'Pending'][seed - 1] || 'Active';
-  
-  return `Sample ${fieldName} ${seed}`;
+
+  if (type === 'boolean') return seed % 3 !== 0;
+
+  if (type === 'number') {
+    if (name.includes('price') || name.includes('amount') || name.includes('cost') || name.includes('revenue'))
+      return `$${(seed * 129 + 49).toLocaleString()}`;
+    if (name.includes('stock') || name.includes('quantity') || name.includes('qty'))
+      return seed * 23 + 5;
+    if (name.includes('rating') || name.includes('score'))
+      return (3.5 + (seed % 15) / 10).toFixed(1);
+    if (name.includes('age')) return 22 + seed * 7;
+    if (name.includes('percent') || name.includes('rate')) return `${(seed * 11 + 40) % 100}%`;
+    if (name.includes('streak') || name.includes('count')) return seed * 4 + 1;
+    return seed * 100 + 50;
+  }
+
+  if (type === 'date') {
+    const d = new Date(2024, seed % 12, (seed * 7 % 28) + 1);
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  if (type === 'datetime') {
+    const d = new Date(2024, seed % 12, (seed * 7 % 28) + 1, 9 + seed % 8, [0, 15, 30, 45][seed % 4]);
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  // String types — rich name/label pools
+  const PEOPLE   = ['Alice Johnson', 'Bob Martinez', 'Carol Lee', 'David Kim', 'Emma Wilson', 'Frank Davis'];
+  const COMPANIES= ['Acme Corp', 'BlueSky Ltd', 'Delta Systems', 'Echo Media', 'Forge Analytics', 'Globe Tech'];
+  const CITIES   = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Seattle'];
+  const STATUSES = ['Active', 'Pending', 'Completed', 'In Progress', 'Archived', 'Draft'];
+  const TAGS     = ['Design', 'Engineering', 'Marketing', 'Sales', 'Support', 'Operations'];
+  const PRODUCTS = ['Pro Plan', 'Starter Kit', 'Enterprise Suite', 'Basic Package', 'Premium Bundle', 'Team Edition'];
+
+  if (name.includes('email'))    return `${PEOPLE[seed % 6].split(' ')[0].toLowerCase()}@example.com`;
+  if (name.includes('phone'))    return `+1 (${500 + seed}) ${200 + seed}-${1000 + seed * 7}`;
+  if (name.includes('name') && (name.includes('full') || name.includes('first') || name === 'name'))
+    return PEOPLE[seed % PEOPLE.length];
+  if (name.includes('company') || name.includes('org') || name.includes('brand'))
+    return COMPANIES[seed % COMPANIES.length];
+  if (name.includes('city') || name.includes('location'))
+    return CITIES[seed % CITIES.length];
+  if (name.includes('address'))  return `${seed * 7 + 100} Oak ${['St', 'Ave', 'Blvd'][seed % 3]}`;
+  if (name.includes('title') || name.includes('name'))
+    return PRODUCTS[seed % PRODUCTS.length];
+  if (name.includes('status'))   return STATUSES[seed % STATUSES.length];
+  if (name.includes('category') || name.includes('tag') || name.includes('type') || name.includes('label'))
+    return TAGS[seed % TAGS.length];
+  if (name.includes('desc') || name.includes('note') || name.includes('comment') || name.includes('summary'))
+    return `Sample ${name} for record ${seed}. This shows a realistic preview.`;
+  if (name.includes('url') || name.includes('website') || name.includes('link'))
+    return `https://example-${seed}.com`;
+  if (name.includes('sku') || name.includes('code') || name.includes('id') || name.includes('ref'))
+    return `${String.fromCharCode(65 + seed % 26)}${String.fromCharCode(65 + (seed + 2) % 26)}-${1000 + seed * 17}`;
+  if (name.includes('priority'))
+    return ['High', 'Medium', 'Low'][seed % 3];
+  if (name.includes('color'))
+    return ['#7c3aed', '#0891b2', '#059669', '#d97706', '#db2777'][seed % 5];
+  if (name.includes('assign') || name.includes('owner') || name.includes('author'))
+    return PEOPLE[(seed + 2) % PEOPLE.length].split(' ')[0];
+
+  return `${fieldName} ${seed}`;
 }
 
 function formatCell(value: unknown, type: string): React.ReactNode {

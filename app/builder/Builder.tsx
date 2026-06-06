@@ -51,7 +51,6 @@ export function Builder({ templates }: { templates: Tpl[] }) {
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previewRoute, setPreviewRoute] = useState('/');
 
   async function call(payload: { prompt?: string; templateId?: string }) {
     setError(null); setLoading(true); setConfig(null);
@@ -65,7 +64,6 @@ export function Builder({ templates }: { templates: Tpl[] }) {
       const safe = parseConfig(j.config);
       setConfig(safe);
       setName(safe.name);
-      setPreviewRoute('/');
       setI18nContext({ i18n: safe.i18n, locale: 'en' });
     } catch (e) {
       setError((e as Error).message);
@@ -243,54 +241,58 @@ export function Builder({ templates }: { templates: Tpl[] }) {
                 </ul>
               </div>
               <div className="card p-4 md:col-span-2">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-4">
                   <h2 className="font-semibold flex items-center gap-2">
                     <Eye className="h-4 w-4 text-purple-500" />
-                    Live Preview
+                    Generated App Preview
                   </h2>
-                  <span className="text-xs text-slate-400">{uniquePreviewRoutes.length} route{uniquePreviewRoutes.length !== 1 ? 's' : ''}</span>
+                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
+                    {config.pages.length} pages · {uniquePreviewRoutes.length} routes
+                  </span>
                 </div>
-                {/* Route tabs — prominent with icons */}
-                {uniquePreviewRoutes.length > 1 && (
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {uniquePreviewRoutes.map((p) => {
-                      const Icon = routeIcon(p.route, p.root);
-                      const isActive = previewRoute === p.route;
-                      return (
-                        <button
-                          key={p.route}
-                          onClick={() => setPreviewRoute(p.route)}
-                          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
-                            isActive
-                              ? 'bg-purple-600 text-white shadow-md'
-                              : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
-                          }`}
-                        >
-                          <Icon className="h-4 w-4" />
-                          <span>{routeEmoji(p.route, p.root)}</span>
-                          <span className="font-mono text-xs">{p.route}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-                <div className="border border-purple-100 rounded-lg p-4 bg-gradient-to-br from-purple-50/40 to-white min-h-[300px] space-y-4">
-                  {config.pages
-                    .filter((p) => p.route === previewRoute)
-                    .map((p) => (
-                      <Renderer
-                        key={p.id}
-                        node={p.root}
-                        appId="preview"
-                        entityName={p.entity}
-                        config={config}
-                      />
-                    ))
-                  }
+
+                {/* All pages rendered in order with route badges */}
+                <div className="space-y-5 max-h-[800px] overflow-y-auto pr-1">
+                  {config.pages.map((p, i) => {
+                    const Icon = routeIcon(p.route, p.root);
+                    const kindColors: Record<string, string> = {
+                      hero:   'bg-violet-100 text-violet-700 border-violet-200',
+                      stats:  'bg-blue-100   text-blue-700   border-blue-200',
+                      table:  'bg-emerald-100 text-emerald-700 border-emerald-200',
+                      form:   'bg-amber-100  text-amber-700  border-amber-200',
+                      chart:  'bg-pink-100   text-pink-700   border-pink-200',
+                    };
+                    const kindColor = kindColors[p.root?.kind ?? ''] ?? 'bg-slate-100 text-slate-600 border-slate-200';
+                    return (
+                      <div key={p.id} className="rounded-xl border border-purple-100 overflow-hidden">
+                        {/* Page label bar */}
+                        <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-50 to-slate-50 border-b border-purple-100">
+                          <Icon className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                          <code className="text-xs font-mono text-purple-700 font-semibold">{p.route}</code>
+                          <span className={`ml-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${kindColor}`}>
+                            {p.root?.kind}
+                          </span>
+                          {p.title && (
+                            <span className="ml-auto text-xs text-slate-400 truncate">{p.title}</span>
+                          )}
+                        </div>
+                        {/* Page content */}
+                        <div className="p-4 bg-gradient-to-br from-purple-50/20 to-white">
+                          <Renderer
+                            node={p.root}
+                            appId="preview"
+                            entityName={p.entity}
+                            config={config}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  Previewing route: <span className="font-medium text-slate-600">{previewRoute}</span>
-                  <span className="ml-2 text-purple-400">· Tables and forms show mock data — save to see real data</span>
+
+                <p className="text-xs text-slate-400 mt-3 flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
+                  Tables and forms show realistic mock data — save to connect real data
                 </p>
               </div>
             </div>

@@ -1,6 +1,6 @@
-// Built-in templates — each one intentionally uses a DIFFERENT combination of
-// page components (kanban, timeline, chart-first, card-heavy, etc.) so every
-// template feels like a distinct product, not the same layout with a new name.
+// Built-in templates — COMPLETELY DISTINCT from each other
+// Each template has unique entities, fields, page layouts, and components
+// No two templates share similar structure or presentation
 
 import type { AppConfig } from './types';
 
@@ -12,663 +12,939 @@ export interface Template {
 export const TEMPLATES: Template[] = [
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 1. CRM — kanban deal pipeline + customer table
-  //    Unique: deals live on a KANBAN board, not a table
+  // 1. REAL ESTATE CRM — Property-focused with Lead Management
+  //    Unique: Property listings, showings timeline, lead scoring system
   // ══════════════════════════════════════════════════════════════════════════
   {
     id: 'crm',
-    name: 'Sales CRM',
-    description: 'Kanban deal pipeline + customer list with revenue stats.',
-    emoji: '💼',
+    name: 'Real Estate CRM',
+    description: 'Property listings, lead tracking, and showing management.',
+    emoji: '🏡',
     config: {
-      name: 'Sales CRM',
-      description: 'Close more deals. Track every customer. See your pipeline at a glance.',
-      theme: { primary: '#7c3aed', accent: '#a855f7', logoText: '💼 CRM' },
+      name: 'Real Estate CRM',
+      description: 'Manage properties, track leads, and close more deals.',
+      theme: { primary: '#0891b2', accent: '#06b6d4', logoText: '🏡 Properties' },
       entities: [
-        { name: 'Customer', label: 'Customer', labelPlural: 'Customers', fields: [
-          { name: 'name',    type: 'string', label: 'Name',    required: true, showInList: true, searchable: true },
-          { name: 'email',   type: 'email',  label: 'Email',   showInList: true },
-          { name: 'company', type: 'string', label: 'Company', showInList: true },
-          { name: 'phone',   type: 'string', label: 'Phone' },
-          { name: 'status',  type: 'select', label: 'Status',  showInList: true, options: [
-            { value: 'lead', label: 'Lead' }, { value: 'active', label: 'Active' },
-            { value: 'inactive', label: 'Inactive' }, { value: 'churned', label: 'Churned' },
+        { name: 'Property', label: 'Property', labelPlural: 'Properties', fields: [
+          { name: 'address',     type: 'string', label: 'Address',        required: true, showInList: true, searchable: true },
+          { name: 'price',       type: 'number', label: 'Price ($)',      required: true, showInList: true },
+          { name: 'propertyType', type: 'select', label: 'Type',          showInList: true, options: [
+            { value: 'house', label: '🏠 House' }, { value: 'condo', label: '🏢 Condo' },
+            { value: 'townhouse', label: '🏘️ Townhouse' }, { value: 'land', label: '🌳 Land' },
           ]},
-          { name: 'notes', type: 'text', label: 'Notes' },
+          { name: 'bedrooms',    type: 'number', label: 'Bedrooms',       showInList: true },
+          { name: 'bathrooms',   type: 'number', label: 'Bathrooms',      showInList: true },
+          { name: 'squareFeet',  type: 'number', label: 'Sq Ft',          showInList: true },
+          { name: 'status',      type: 'select', label: 'Status',         showInList: true, options: [
+            { value: 'available', label: '✅ Available' }, { value: 'pending', label: '🕐 Pending' },
+            { value: 'sold', label: '💰 Sold' }, { value: 'off_market', label: '📦 Off Market' },
+          ]},
+          { name: 'description', type: 'text',   label: 'Description' },
         ]},
-        { name: 'Deal', label: 'Deal', labelPlural: 'Deals', fields: [
-          { name: 'title',     type: 'string',   label: 'Title',         required: true, showInList: true },
-          { name: 'amount',    type: 'number',   label: 'Value ($)',      showInList: true },
-          { name: 'stage',     type: 'select',   label: 'Stage',          showInList: true, options: [
-            { value: 'new', label: 'New' }, { value: 'qualified', label: 'Qualified' },
-            { value: 'proposal', label: 'Proposal' }, { value: 'negotiation', label: 'Negotiation' },
-            { value: 'won', label: 'Won ✓' }, { value: 'lost', label: 'Lost ✗' },
+        { name: 'Lead', label: 'Lead', labelPlural: 'Leads', fields: [
+          { name: 'name',        type: 'string', label: 'Full Name',      required: true, showInList: true, searchable: true },
+          { name: 'email',       type: 'email',  label: 'Email',          showInList: true },
+          { name: 'phone',       type: 'string', label: 'Phone',          showInList: true },
+          { name: 'budget',      type: 'number', label: 'Budget ($)',     showInList: true },
+          { name: 'leadSource',  type: 'select', label: 'Source',         showInList: true, options: [
+            { value: 'website', label: '🌐 Website' }, { value: 'referral', label: '👥 Referral' },
+            { value: 'social', label: '📱 Social Media' }, { value: 'walk_in', label: '🚶 Walk-in' },
           ]},
-          { name: 'customer',  type: 'relation', label: 'Customer',       entity: 'Customer', showInList: true },
-          { name: 'closeDate', type: 'date',     label: 'Expected Close', showInList: true },
-          { name: 'notes',     type: 'text',     label: 'Notes' },
+          { name: 'score',       type: 'select', label: 'Lead Score',     showInList: true, options: [
+            { value: 'hot', label: '🔥 Hot' }, { value: 'warm', label: '☀️ Warm' }, { value: 'cold', label: '❄️ Cold' },
+          ]},
+          { name: 'notes',       type: 'text',   label: 'Notes' },
+        ]},
+        { name: 'Showing', label: 'Showing', labelPlural: 'Showings', fields: [
+          { name: 'property',    type: 'relation', label: 'Property',     entity: 'Property', required: true, showInList: true },
+          { name: 'lead',        type: 'relation', label: 'Lead',         entity: 'Lead', showInList: true },
+          { name: 'date',        type: 'datetime', label: 'Date & Time',  required: true, showInList: true },
+          { name: 'status',      type: 'select',  label: 'Status',        showInList: true, options: [
+            { value: 'scheduled', label: '📅 Scheduled' }, { value: 'completed', label: '✅ Completed' },
+            { value: 'cancelled', label: '❌ Cancelled' }, { value: 'no_show', label: '👻 No Show' },
+          ]},
+          { name: 'feedback',    type: 'text',    label: 'Feedback' },
         ]},
       ],
       pages: [
-        // HOME — big revenue stats + pipeline kanban
-        { id: 'home',       route: '/', title: 'Dashboard', root: { kind: 'hero', props: {
-          title: 'Sales CRM', subtitle: 'Your entire pipeline — from first lead to closed deal.',
-          cta: 'Add Deal', ctaRoute: '/deals/new',
+        // HOME — Hero with property stats and recent listings
+        { id: 'home', route: '/', title: 'Dashboard', root: { kind: 'hero', props: {
+          title: 'Real Estate CRM', subtitle: 'Your complete property and lead management system.',
+          cta: 'Add Property', ctaRoute: '/properties/new',
         }}},
         { id: 'home-stats', route: '/', title: 'Dashboard', root: { kind: 'stats', props: { items: [
-          { label: 'Total Customers', source: { entity: 'Customer', op: 'count' } },
-          { label: 'Open Deals',      source: { entity: 'Deal',     op: 'count' } },
-          { label: 'Pipeline Value',  source: { entity: 'Deal', field: 'amount', op: 'sum' } },
-          { label: 'Avg Deal Size',   source: { entity: 'Deal', field: 'amount', op: 'avg' } },
+          { label: 'Active Listings', source: { entity: 'Property', op: 'count' } },
+          { label: 'Total Leads',     source: { entity: 'Lead', op: 'count' } },
+          { label: 'Upcoming Showings', source: { entity: 'Showing', op: 'count' } },
+          { label: 'Avg Property Price', source: { entity: 'Property', field: 'price', op: 'avg' } },
         ]}}},
-        // PIPELINE — kanban is the main deals view
-        { id: 'home-pipeline-h', route: '/', title: 'Pipeline', root: { kind: 'heading', props: { text: 'Deal Pipeline', level: 2 }}},
-        { id: 'home-pipeline',   route: '/', title: 'Pipeline', entity: 'Deal', root: { kind: 'kanban', props: {
-          entity: 'Deal', groupBy: 'stage',
-          columns: ['new','qualified','proposal','negotiation','won','lost'],
+        { id: 'home-properties-h', route: '/', title: 'Featured', root: { kind: 'heading', props: { text: '🏡 Featured Properties', level: 2 }}},
+        { id: 'home-properties', route: '/', title: 'Properties', entity: 'Property', root: { kind: 'table', props: { entity: 'Property', pageSize: 5 }}},
+
+        // PROPERTIES — Full listing table
+        { id: 'properties-h', route: '/properties', title: 'Properties', root: { kind: 'heading', props: { text: 'Property Listings', level: 1 }}},
+        { id: 'properties-chart', route: '/properties', title: 'Properties', root: { kind: 'chart', props: {
+          entity: 'Property', groupBy: 'propertyType', title: 'Properties by Type', type: 'pie',
         }}},
+        { id: 'properties', route: '/properties', title: 'Properties', entity: 'Property', root: { kind: 'table', props: { entity: 'Property', pageSize: 20 }}},
+        { id: 'properties-new', route: '/properties/new', title: 'Add Property', entity: 'Property', root: { kind: 'form', props: { entity: 'Property', mode: 'create', successRoute: '/properties' }}},
 
-        // CUSTOMERS page — table with search
-        { id: 'customers-h',   route: '/customers',     title: 'Customers', root: { kind: 'heading', props: { text: 'All Customers', level: 1 }}},
-        { id: 'customers',     route: '/customers',     title: 'Customers', entity: 'Customer', root: { kind: 'table',  props: { entity: 'Customer', pageSize: 25 }}},
-        { id: 'customers-new', route: '/customers/new', title: 'New Customer', entity: 'Customer', root: { kind: 'form', props: { entity: 'Customer', mode: 'create', successRoute: '/customers' }}},
-
-        // DEALS page — kanban board (not a table)
-        { id: 'deals-h',   route: '/deals',     title: 'Deals', root: { kind: 'heading', props: { text: 'Deal Board', level: 1 }}},
-        { id: 'deals-stats', route: '/deals',   title: 'Deals', root: { kind: 'stats', props: { items: [
-          { label: 'Total Value', source: { entity: 'Deal', field: 'amount', op: 'sum' } },
-          { label: 'Avg Deal',    source: { entity: 'Deal', field: 'amount', op: 'avg' } },
-          { label: 'Total Deals', source: { entity: 'Deal', op: 'count' } },
+        // LEADS — Lead management with scoring
+        { id: 'leads-h', route: '/leads', title: 'Leads', root: { kind: 'heading', props: { text: 'Lead Pipeline', level: 1 }}},
+        { id: 'leads-stats', route: '/leads', title: 'Leads', root: { kind: 'stats', props: { items: [
+          { label: 'Total Leads', source: { entity: 'Lead', op: 'count' } },
+          { label: 'Avg Budget', source: { entity: 'Lead', field: 'budget', op: 'avg' } },
         ]}}},
-        { id: 'deals',     route: '/deals',     title: 'Deals', entity: 'Deal', root: { kind: 'kanban', props: {
-          entity: 'Deal', groupBy: 'stage',
-          columns: ['new','qualified','proposal','negotiation','won','lost'],
+        { id: 'leads-chart', route: '/leads', title: 'Leads', root: { kind: 'chart', props: {
+          entity: 'Lead', groupBy: 'score', title: 'Leads by Score', type: 'bar',
         }}},
-        { id: 'deals-new', route: '/deals/new', title: 'New Deal', entity: 'Deal', root: { kind: 'form', props: { entity: 'Deal', mode: 'create', successRoute: '/deals' }}},
+        { id: 'leads', route: '/leads', title: 'Leads', entity: 'Lead', root: { kind: 'table', props: { entity: 'Lead', pageSize: 25 }}},
+        { id: 'leads-new', route: '/leads/new', title: 'Add Lead', entity: 'Lead', root: { kind: 'form', props: { entity: 'Lead', mode: 'create', successRoute: '/leads' }}},
 
-        // REVENUE chart page
-        { id: 'revenue-h',   route: '/revenue', title: 'Revenue', root: { kind: 'heading', props: { text: 'Revenue Analytics', level: 1 }}},
-        { id: 'revenue-bar', route: '/revenue', title: 'Revenue', root: { kind: 'chart', props: {
-          entity: 'Deal', groupBy: 'stage', field: 'amount', title: 'Value by Stage', type: 'bar',
+        // SHOWINGS — Timeline view of appointments
+        { id: 'showings-h', route: '/showings', title: 'Showings', root: { kind: 'heading', props: { text: 'Property Showings', level: 1 }}},
+        { id: 'showings-timeline', route: '/showings', title: 'Showings', entity: 'Showing', root: { kind: 'timeline', props: {
+          entity: 'Showing', dateField: 'date', titleField: 'property', descriptionField: 'status',
         }}},
-        { id: 'revenue-pie', route: '/revenue', title: 'Revenue', root: { kind: 'chart', props: {
-          entity: 'Customer', groupBy: 'status', title: 'Customers by Status', type: 'pie',
-        }}},
+        { id: 'showings-new', route: '/showings/new', title: 'Schedule Showing', entity: 'Showing', root: { kind: 'form', props: { entity: 'Showing', mode: 'create', successRoute: '/showings' }}},
       ],
     },
   },
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 2. TASK TRACKER — kanban board as the PRIMARY view
-  //    Unique: home = kanban, /analytics = 2 charts, no chart on home
+  // 2. PROJECT MANAGER — Sprint planning with milestone tracking
+  //    Unique: Sprint kanban board, milestone timeline, team capacity planning
   // ══════════════════════════════════════════════════════════════════════════
   {
     id: 'tasks',
-    name: 'Task Board',
-    description: 'Kanban-first task management with priority analytics.',
-    emoji: '✅',
+    name: 'Project Manager',
+    description: 'Sprint planning, milestone tracking, and team collaboration.',
+    emoji: '🚀',
     config: {
-      name: 'Task Board',
-      description: 'Drag tasks from To Do → Done. Track who owns what.',
-      theme: { primary: '#2563eb', accent: '#60a5fa', logoText: '✅ Tasks' },
+      name: 'Project Manager',
+      description: 'Plan sprints, track milestones, and ship faster.',
+      theme: { primary: '#8b5cf6', accent: '#a78bfa', logoText: '🚀 Projects' },
       entities: [
-        { name: 'Task', label: 'Task', labelPlural: 'Tasks', fields: [
-          { name: 'title',    type: 'string', label: 'Title',    required: true, showInList: true, searchable: true },
-          { name: 'status',   type: 'select', label: 'Status',   showInList: true, default: 'todo', options: [
-            { value: 'todo', label: 'To Do' }, { value: 'in_progress', label: 'In Progress' },
-            { value: 'review', label: 'In Review' }, { value: 'done', label: 'Done' },
+        { name: 'Project', label: 'Project', labelPlural: 'Projects', fields: [
+          { name: 'name',        type: 'string', label: 'Project Name',   required: true, showInList: true, searchable: true },
+          { name: 'client',      type: 'string', label: 'Client',         showInList: true },
+          { name: 'status',      type: 'select', label: 'Status',         showInList: true, options: [
+            { value: 'planning', label: '📋 Planning' }, { value: 'active', label: '🏃 Active' },
+            { value: 'on_hold', label: '⏸️ On Hold' }, { value: 'completed', label: '✅ Completed' },
           ]},
-          { name: 'priority', type: 'select', label: 'Priority', showInList: true, default: 'medium', options: [
-            { value: 'low', label: '🟢 Low' }, { value: 'medium', label: '🟡 Medium' },
-            { value: 'high', label: '🔴 High' }, { value: 'urgent', label: '🚨 Urgent' },
+          { name: 'startDate',   type: 'date',   label: 'Start Date',     showInList: true },
+          { name: 'deadline',    type: 'date',   label: 'Deadline',       showInList: true },
+          { name: 'budget',      type: 'number', label: 'Budget ($)',     showInList: true },
+          { name: 'description', type: 'text',   label: 'Description' },
+        ]},
+        { name: 'Sprint', label: 'Sprint', labelPlural: 'Sprints', fields: [
+          { name: 'name',        type: 'string',   label: 'Sprint Name',   required: true, showInList: true },
+          { name: 'project',     type: 'relation', label: 'Project',       entity: 'Project', showInList: true },
+          { name: 'startDate',   type: 'date',     label: 'Start Date',    required: true, showInList: true },
+          { name: 'endDate',     type: 'date',     label: 'End Date',      required: true, showInList: true },
+          { name: 'status',      type: 'select',   label: 'Status',        showInList: true, options: [
+            { value: 'planning', label: '📋 Planning' }, { value: 'in_progress', label: '▶️ In Progress' },
+            { value: 'completed', label: '✅ Completed' },
           ]},
-          { name: 'assignee',    type: 'string', label: 'Assignee', showInList: true },
-          { name: 'dueDate',     type: 'date',   label: 'Due Date', showInList: true },
-          { name: 'project',     type: 'select', label: 'Project',  showInList: true, options: [
-            { value: 'design', label: 'Design' }, { value: 'dev', label: 'Development' },
-            { value: 'marketing', label: 'Marketing' }, { value: 'ops', label: 'Operations' },
+          { name: 'goal',        type: 'text',     label: 'Sprint Goal' },
+        ]},
+        { name: 'Story', label: 'User Story', labelPlural: 'User Stories', fields: [
+          { name: 'title',       type: 'string',   label: 'Story Title',   required: true, showInList: true, searchable: true },
+          { name: 'sprint',      type: 'relation', label: 'Sprint',        entity: 'Sprint', showInList: true },
+          { name: 'storyPoints', type: 'select',   label: 'Story Points',  showInList: true, options: [
+            { value: '1', label: '1 pt' }, { value: '2', label: '2 pts' }, { value: '3', label: '3 pts' },
+            { value: '5', label: '5 pts' }, { value: '8', label: '8 pts' }, { value: '13', label: '13 pts' },
           ]},
-          { name: 'description', type: 'text', label: 'Description' },
+          { name: 'status',      type: 'select',   label: 'Status',        showInList: true, options: [
+            { value: 'backlog', label: '📦 Backlog' }, { value: 'todo', label: '📝 To Do' },
+            { value: 'in_progress', label: '🔨 In Progress' }, { value: 'review', label: '👀 Review' },
+            { value: 'done', label: '✅ Done' },
+          ]},
+          { name: 'assignee',    type: 'string',   label: 'Assignee',      showInList: true },
+          { name: 'description', type: 'text',     label: 'Description' },
+        ]},
+        { name: 'Milestone', label: 'Milestone', labelPlural: 'Milestones', fields: [
+          { name: 'title',       type: 'string',   label: 'Milestone',     required: true, showInList: true },
+          { name: 'project',     type: 'relation', label: 'Project',       entity: 'Project', showInList: true },
+          { name: 'dueDate',     type: 'date',     label: 'Due Date',      required: true, showInList: true },
+          { name: 'status',      type: 'select',   label: 'Status',        showInList: true, options: [
+            { value: 'upcoming', label: '🔜 Upcoming' }, { value: 'in_progress', label: '🏃 In Progress' },
+            { value: 'achieved', label: '🎯 Achieved' }, { value: 'missed', label: '❌ Missed' },
+          ]},
+          { name: 'description', type: 'text',     label: 'Description' },
         ]},
       ],
       pages: [
-        // HOME — stats + kanban (no chart on home, keep it action-focused)
-        { id: 'home',       route: '/', title: 'Board', root: { kind: 'hero', props: {
-          title: 'Task Board', subtitle: 'Your team\'s work — organized, prioritized, and tracked.',
-          cta: 'Add Task', ctaRoute: '/tasks/new',
+        // HOME — Project overview with active sprint board
+        { id: 'home', route: '/', title: 'Dashboard', root: { kind: 'hero', props: {
+          title: 'Project Manager', subtitle: 'Ship better products with sprint planning and milestone tracking.',
+          cta: 'New Project', ctaRoute: '/projects/new',
         }}},
-        { id: 'home-stats', route: '/', title: 'Board', root: { kind: 'stats', props: { items: [
-          { label: 'Total Tasks',  source: { entity: 'Task', op: 'count' } },
-          { label: 'In Progress',  source: { entity: 'Task', op: 'count' } },
-          { label: 'Overdue',      source: { entity: 'Task', op: 'count' } },
-          { label: 'Completed',    source: { entity: 'Task', op: 'count' } },
+        { id: 'home-stats', route: '/', title: 'Dashboard', root: { kind: 'stats', props: { items: [
+          { label: 'Active Projects', source: { entity: 'Project', op: 'count' } },
+          { label: 'Active Sprints',  source: { entity: 'Sprint', op: 'count' } },
+          { label: 'User Stories',    source: { entity: 'Story', op: 'count' } },
+          { label: 'Milestones',      source: { entity: 'Milestone', op: 'count' } },
         ]}}},
-        { id: 'home-board-h', route: '/', title: 'Board', root: { kind: 'heading', props: { text: 'Kanban Board', level: 2 }}},
-        { id: 'home-board',   route: '/', title: 'Board', entity: 'Task', root: { kind: 'kanban', props: {
-          entity: 'Task', groupBy: 'status',
+        { id: 'home-sprint-h', route: '/', title: 'Sprint Board', root: { kind: 'heading', props: { text: '🏃 Current Sprint', level: 2 }}},
+        { id: 'home-sprint', route: '/', title: 'Sprint', entity: 'Story', root: { kind: 'kanban', props: {
+          entity: 'Story', groupBy: 'status',
           columns: ['todo', 'in_progress', 'review', 'done'],
         }}},
 
-        // TASKS LIST — table for searching/filtering
-        { id: 'tasks-h',   route: '/tasks',     title: 'All Tasks', root: { kind: 'heading', props: { text: 'All Tasks', level: 1 }}},
-        { id: 'tasks',     route: '/tasks',     title: 'Tasks', entity: 'Task', root: { kind: 'table', props: { entity: 'Task', pageSize: 30 }}},
-        { id: 'tasks-new', route: '/tasks/new', title: 'New Task', entity: 'Task', root: { kind: 'form', props: { entity: 'Task', mode: 'create', successRoute: '/' }}},
-
-        // ANALYTICS — purely charts, no table
-        { id: 'analytics-h',        route: '/analytics', title: 'Analytics', root: { kind: 'heading', props: { text: 'Task Analytics', level: 1 }}},
-        { id: 'analytics-stats',    route: '/analytics', title: 'Analytics', root: { kind: 'stats', props: { items: [
-          { label: 'Total Tasks', source: { entity: 'Task', op: 'count' } },
+        // PROJECTS — Project list with budget tracking
+        { id: 'projects-h', route: '/projects', title: 'Projects', root: { kind: 'heading', props: { text: 'All Projects', level: 1 }}},
+        { id: 'projects-stats', route: '/projects', title: 'Projects', root: { kind: 'stats', props: { items: [
+          { label: 'Total Projects', source: { entity: 'Project', op: 'count' } },
+          { label: 'Total Budget',   source: { entity: 'Project', field: 'budget', op: 'sum' } },
         ]}}},
-        { id: 'analytics-priority', route: '/analytics', title: 'By Priority', root: { kind: 'chart', props: {
-          entity: 'Task', groupBy: 'priority', title: 'Tasks by Priority', type: 'pie',
+        { id: 'projects', route: '/projects', title: 'Projects', entity: 'Project', root: { kind: 'table', props: { entity: 'Project', pageSize: 20 }}},
+        { id: 'projects-new', route: '/projects/new', title: 'New Project', entity: 'Project', root: { kind: 'form', props: { entity: 'Project', mode: 'create', successRoute: '/projects' }}},
+
+        // SPRINTS — Sprint planning board
+        { id: 'sprints-h', route: '/sprints', title: 'Sprints', root: { kind: 'heading', props: { text: 'Sprint Planning', level: 1 }}},
+        { id: 'sprints', route: '/sprints', title: 'Sprints', entity: 'Sprint', root: { kind: 'table', props: { entity: 'Sprint', pageSize: 15 }}},
+        { id: 'sprints-new', route: '/sprints/new', title: 'New Sprint', entity: 'Sprint', root: { kind: 'form', props: { entity: 'Sprint', mode: 'create', successRoute: '/sprints' }}},
+
+        // BACKLOG — User story management
+        { id: 'backlog-h', route: '/backlog', title: 'Backlog', root: { kind: 'heading', props: { text: 'Product Backlog', level: 1 }}},
+        { id: 'backlog-chart', route: '/backlog', title: 'Backlog', root: { kind: 'chart', props: {
+          entity: 'Story', groupBy: 'status', title: 'Stories by Status', type: 'bar',
         }}},
-        { id: 'analytics-project',  route: '/analytics', title: 'By Project', root: { kind: 'chart', props: {
-          entity: 'Task', groupBy: 'project', title: 'Tasks by Project', type: 'bar',
+        { id: 'backlog', route: '/backlog', title: 'Backlog', entity: 'Story', root: { kind: 'table', props: { entity: 'Story', pageSize: 30 }}},
+        { id: 'backlog-new', route: '/backlog/new', title: 'New Story', entity: 'Story', root: { kind: 'form', props: { entity: 'Story', mode: 'create', successRoute: '/backlog' }}},
+
+        // MILESTONES — Timeline view
+        { id: 'milestones-h', route: '/milestones', title: 'Milestones', root: { kind: 'heading', props: { text: 'Project Milestones', level: 1 }}},
+        { id: 'milestones-timeline', route: '/milestones', title: 'Milestones', entity: 'Milestone', root: { kind: 'timeline', props: {
+          entity: 'Milestone', dateField: 'dueDate', titleField: 'title', descriptionField: 'status',
         }}},
-        { id: 'analytics-status',   route: '/analytics', title: 'By Status', root: { kind: 'chart', props: {
-          entity: 'Task', groupBy: 'status', title: 'Tasks by Status', type: 'bar',
-        }}},
+        { id: 'milestones-new', route: '/milestones/new', title: 'New Milestone', entity: 'Milestone', root: { kind: 'form', props: { entity: 'Milestone', mode: 'create', successRoute: '/milestones' }}},
       ],
     },
   },
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 3. INVENTORY — alert-first dashboard; charts drive the home page
-  //    Unique: home leads with alerts (not hero), stock chart is primary
+  // 3. RESTAURANT MANAGER — Table reservations, menu management, staff scheduling
+  //    Unique: Reservation timeline, menu with categories, staff shift kanban
   // ══════════════════════════════════════════════════════════════════════════
   {
     id: 'inventory',
-    name: 'Inventory',
-    description: 'Stock levels, reorder alerts, and category breakdowns.',
-    emoji: '📦',
+    name: 'Restaurant Manager',
+    description: 'Reservations, menu management, and staff scheduling.',
+    emoji: '🍽️',
     config: {
-      name: 'Inventory Manager',
-      description: 'Know exactly what you have — and what you\'re about to run out of.',
-      theme: { primary: '#059669', accent: '#34d399', logoText: '📦 Stock' },
+      name: 'Restaurant Manager',
+      description: 'Manage reservations, menus, and staff — all in one place.',
+      theme: { primary: '#dc2626', accent: '#f87171', logoText: '🍽️ Dining' },
       entities: [
-        { name: 'Product', label: 'Product', labelPlural: 'Products', fields: [
-          { name: 'name',      type: 'string', label: 'Product Name', required: true, showInList: true, searchable: true },
-          { name: 'sku',       type: 'string', label: 'SKU',          showInList: true },
-          { name: 'category',  type: 'select', label: 'Category',     showInList: true, options: [
-            { value: 'electronics', label: 'Electronics' }, { value: 'clothing', label: 'Clothing' },
-            { value: 'food', label: 'Food & Drink' }, { value: 'tools', label: 'Tools' }, { value: 'office', label: 'Office' },
+        { name: 'Reservation', label: 'Reservation', labelPlural: 'Reservations', fields: [
+          { name: 'guestName',   type: 'string',   label: 'Guest Name',    required: true, showInList: true, searchable: true },
+          { name: 'phone',       type: 'string',   label: 'Phone',         showInList: true },
+          { name: 'email',       type: 'email',    label: 'Email' },
+          { name: 'partySize',   type: 'number',   label: 'Party Size',    required: true, showInList: true },
+          { name: 'dateTime',    type: 'datetime', label: 'Date & Time',   required: true, showInList: true },
+          { name: 'tableNumber', type: 'string',   label: 'Table #',       showInList: true },
+          { name: 'status',      type: 'select',   label: 'Status',        showInList: true, options: [
+            { value: 'confirmed', label: '✅ Confirmed' }, { value: 'seated', label: '🪑 Seated' },
+            { value: 'completed', label: '✔️ Completed' }, { value: 'cancelled', label: '❌ Cancelled' },
+            { value: 'no_show', label: '👻 No Show' },
           ]},
-          { name: 'stock',     type: 'number', label: 'Stock on Hand', showInList: true, default: 0 },
-          { name: 'reorderAt', type: 'number', label: 'Reorder Level',  default: 10 },
-          { name: 'price',     type: 'number', label: 'Unit Price ($)', showInList: true, default: 0 },
-          { name: 'supplier',  type: 'string', label: 'Supplier',       showInList: true },
-          { name: 'notes',     type: 'text',   label: 'Notes' },
+          { name: 'specialRequests', type: 'text', label: 'Special Requests' },
         ]},
-        { name: 'Alert', label: 'Alert', labelPlural: 'Alerts', fields: [
-          { name: 'product',  type: 'relation', label: 'Product',  entity: 'Product', showInList: true },
-          { name: 'message',  type: 'string',   label: 'Message',  required: true, showInList: true },
-          { name: 'severity', type: 'select',   label: 'Severity', showInList: true, options: [
-            { value: 'low', label: '🟢 Low' }, { value: 'medium', label: '🟡 Medium' }, { value: 'high', label: '🔴 High' },
-          ], default: 'medium' },
-          { name: 'resolved', type: 'boolean', label: 'Resolved?', default: false, showInList: true },
+        { name: 'MenuItem', label: 'Menu Item', labelPlural: 'Menu Items', fields: [
+          { name: 'name',        type: 'string', label: 'Dish Name',      required: true, showInList: true, searchable: true },
+          { name: 'category',    type: 'select', label: 'Category',       showInList: true, options: [
+            { value: 'appetizer', label: '🥗 Appetizer' }, { value: 'main', label: '🍝 Main Course' },
+            { value: 'dessert', label: '🍰 Dessert' }, { value: 'beverage', label: '🥤 Beverage' },
+            { value: 'special', label: '⭐ Daily Special' },
+          ]},
+          { name: 'price',       type: 'number', label: 'Price ($)',      required: true, showInList: true },
+          { name: 'available',   type: 'boolean', label: 'Available?',    showInList: true, default: true },
+          { name: 'ingredients', type: 'text',   label: 'Ingredients' },
+          { name: 'description', type: 'text',   label: 'Description' },
+        ]},
+        { name: 'Staff', label: 'Staff Member', labelPlural: 'Staff', fields: [
+          { name: 'name',      type: 'string', label: 'Full Name',      required: true, showInList: true, searchable: true },
+          { name: 'role',      type: 'select', label: 'Role',           showInList: true, options: [
+            { value: 'chef', label: '👨‍🍳 Chef' }, { value: 'server', label: '🙋 Server' },
+            { value: 'host', label: '🎩 Host' }, { value: 'bartender', label: '🍸 Bartender' },
+            { value: 'manager', label: '📋 Manager' },
+          ]},
+          { name: 'phone',     type: 'string', label: 'Phone',          showInList: true },
+          { name: 'email',     type: 'email',  label: 'Email' },
+          { name: 'hireDate',  type: 'date',   label: 'Hire Date',      showInList: true },
+          { name: 'status',    type: 'select', label: 'Status',         showInList: true, options: [
+            { value: 'active', label: '✅ Active' }, { value: 'on_leave', label: '🏖️ On Leave' },
+            { value: 'terminated', label: '❌ Terminated' },
+          ]},
+        ]},
+        { name: 'Shift', label: 'Shift', labelPlural: 'Shifts', fields: [
+          { name: 'staff',      type: 'relation', label: 'Staff Member',  entity: 'Staff', required: true, showInList: true },
+          { name: 'date',       type: 'date',     label: 'Date',          required: true, showInList: true },
+          { name: 'shiftType',  type: 'select',   label: 'Shift',         showInList: true, options: [
+            { value: 'morning', label: '🌅 Morning (7am-3pm)' }, { value: 'afternoon', label: '☀️ Afternoon (3pm-9pm)' },
+            { value: 'evening', label: '🌙 Evening (9pm-2am)' },
+          ]},
+          { name: 'status',     type: 'select',   label: 'Status',        showInList: true, options: [
+            { value: 'scheduled', label: '📅 Scheduled' }, { value: 'confirmed', label: '✅ Confirmed' },
+            { value: 'completed', label: '✔️ Completed' }, { value: 'cancelled', label: '❌ Cancelled' },
+          ]},
         ]},
       ],
       pages: [
-        // HOME — chart-first (no hero banner, goes straight to data)
-        { id: 'home-h',     route: '/', title: 'Inventory', root: { kind: 'heading', props: { text: 'Inventory Dashboard', level: 1 }}},
-        { id: 'home-stats', route: '/', title: 'Inventory', root: { kind: 'stats', props: { items: [
-          { label: 'Total Products',  source: { entity: 'Product', op: 'count' } },
-          { label: 'Inventory Value', source: { entity: 'Product', field: 'price', op: 'sum' } },
-          { label: 'Open Alerts',     source: { entity: 'Alert',   op: 'count' } },
-          { label: 'Avg Unit Price',  source: { entity: 'Product', field: 'price', op: 'avg' } },
-        ]}}},
-        // Stock by category chart — immediately visible
-        { id: 'home-chart', route: '/', title: 'Stock', root: { kind: 'chart', props: {
-          entity: 'Product', groupBy: 'category', field: 'stock', title: 'Stock Levels by Category', type: 'bar',
+        // HOME — Reservations timeline and daily stats
+        { id: 'home', route: '/', title: 'Dashboard', root: { kind: 'hero', props: {
+          title: 'Restaurant Manager', subtitle: 'Seamless reservations, staff scheduling, and menu management.',
+          cta: 'New Reservation', ctaRoute: '/reservations/new',
         }}},
-        // Alerts table inline on home
-        { id: 'home-alerts-h', route: '/', title: 'Alerts', root: { kind: 'heading', props: { text: '🔴 Open Alerts', level: 2 }}},
-        { id: 'home-alerts',   route: '/', title: 'Alerts', entity: 'Alert', root: { kind: 'table', props: { entity: 'Alert', pageSize: 5 }}},
-
-        // PRODUCTS — full table with value chart above
-        { id: 'products-h',     route: '/products',     title: 'Products', root: { kind: 'heading', props: { text: 'Product Catalogue', level: 1 }}},
-        { id: 'products-stats', route: '/products',     title: 'Products', root: { kind: 'stats', props: { items: [
-          { label: 'Products',   source: { entity: 'Product', op: 'count' } },
-          { label: 'Total Value', source: { entity: 'Product', field: 'price', op: 'sum' } },
+        { id: 'home-stats', route: '/', title: 'Dashboard', root: { kind: 'stats', props: { items: [
+          { label: 'Today\'s Reservations', source: { entity: 'Reservation', op: 'count' } },
+          { label: 'Menu Items',            source: { entity: 'MenuItem', op: 'count' } },
+          { label: 'Active Staff',          source: { entity: 'Staff', op: 'count' } },
+          { label: 'Avg Party Size',        source: { entity: 'Reservation', field: 'partySize', op: 'avg' } },
         ]}}},
-        { id: 'products',     route: '/products',     title: 'Products', entity: 'Product', root: { kind: 'table', props: { entity: 'Product', pageSize: 25 }}},
-        { id: 'products-new', route: '/products/new', title: 'Add Product', entity: 'Product', root: { kind: 'form', props: { entity: 'Product', mode: 'create', successRoute: '/products' }}},
+        { id: 'home-reservations-h', route: '/', title: 'Reservations', root: { kind: 'heading', props: { text: '📅 Today\'s Reservations', level: 2 }}},
+        { id: 'home-reservations', route: '/', title: 'Reservations', entity: 'Reservation', root: { kind: 'timeline', props: {
+          entity: 'Reservation', dateField: 'dateTime', titleField: 'guestName', descriptionField: 'partySize',
+        }}},
 
-        // ALERTS — full alert list
-        { id: 'alerts-h',   route: '/alerts',     title: 'Alerts', root: { kind: 'heading', props: { text: 'Stock Alerts', level: 1 }}},
-        { id: 'alerts',     route: '/alerts',     title: 'Alerts', entity: 'Alert', root: { kind: 'table', props: { entity: 'Alert', pageSize: 25 }}},
-        { id: 'alerts-new', route: '/alerts/new', title: 'New Alert', entity: 'Alert', root: { kind: 'form', props: { entity: 'Alert', mode: 'create', successRoute: '/alerts' }}},
+        // RESERVATIONS — Full booking calendar
+        { id: 'reservations-h', route: '/reservations', title: 'Reservations', root: { kind: 'heading', props: { text: 'Reservation Book', level: 1 }}},
+        { id: 'reservations-stats', route: '/reservations', title: 'Reservations', root: { kind: 'stats', props: { items: [
+          { label: 'Total Bookings', source: { entity: 'Reservation', op: 'count' } },
+          { label: 'Avg Party Size',  source: { entity: 'Reservation', field: 'partySize', op: 'avg' } },
+        ]}}},
+        { id: 'reservations', route: '/reservations', title: 'Reservations', entity: 'Reservation', root: { kind: 'table', props: { entity: 'Reservation', pageSize: 25 }}},
+        { id: 'reservations-new', route: '/reservations/new', title: 'New Reservation', entity: 'Reservation', root: { kind: 'form', props: { entity: 'Reservation', mode: 'create', successRoute: '/reservations' }}},
+
+        // MENU — Menu items by category
+        { id: 'menu-h', route: '/menu', title: 'Menu', root: { kind: 'heading', props: { text: 'Restaurant Menu', level: 1 }}},
+        { id: 'menu-chart', route: '/menu', title: 'Menu', root: { kind: 'chart', props: {
+          entity: 'MenuItem', groupBy: 'category', title: 'Menu Items by Category', type: 'pie',
+        }}},
+        { id: 'menu', route: '/menu', title: 'Menu', entity: 'MenuItem', root: { kind: 'table', props: { entity: 'MenuItem', pageSize: 30 }}},
+        { id: 'menu-new', route: '/menu/new', title: 'Add Menu Item', entity: 'MenuItem', root: { kind: 'form', props: { entity: 'MenuItem', mode: 'create', successRoute: '/menu' }}},
+
+        // STAFF — Staff directory with role breakdown
+        { id: 'staff-h', route: '/staff', title: 'Staff', root: { kind: 'heading', props: { text: 'Staff Directory', level: 1 }}},
+        { id: 'staff-chart', route: '/staff', title: 'Staff', root: { kind: 'chart', props: {
+          entity: 'Staff', groupBy: 'role', title: 'Staff by Role', type: 'bar',
+        }}},
+        { id: 'staff', route: '/staff', title: 'Staff', entity: 'Staff', root: { kind: 'table', props: { entity: 'Staff', pageSize: 20 }}},
+        { id: 'staff-new', route: '/staff/new', title: 'Add Staff', entity: 'Staff', root: { kind: 'form', props: { entity: 'Staff', mode: 'create', successRoute: '/staff' }}},
+
+        // SCHEDULE — Shift scheduling kanban
+        { id: 'schedule-h', route: '/schedule', title: 'Schedule', root: { kind: 'heading', props: { text: 'Staff Schedule', level: 1 }}},
+        { id: 'schedule-kanban', route: '/schedule', title: 'Schedule', entity: 'Shift', root: { kind: 'kanban', props: {
+          entity: 'Shift', groupBy: 'shiftType',
+          columns: ['morning', 'afternoon', 'evening'],
+        }}},
+        { id: 'schedule-new', route: '/schedule/new', title: 'Add Shift', entity: 'Shift', root: { kind: 'form', props: { entity: 'Shift', mode: 'create', successRoute: '/schedule' }}},
       ],
     },
   },
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 4. EXPENSE TRACKER — finance dashboard, charts dominate every page
-  //    Unique: spending pie + bar on home AND list page; budgets comparison table
+  // 4. FITNESS TRACKER — Workout logging, nutrition tracking, progress charts
+  //    Unique: Exercise library, meal planning, body metrics timeline
   // ══════════════════════════════════════════════════════════════════════════
   {
     id: 'expenses',
-    name: 'Expense Tracker',
-    description: 'Log expenses with pie/bar breakdowns and budget limits.',
-    emoji: '💰',
+    name: 'Fitness Tracker',
+    description: 'Workout logging, meal tracking, and progress visualization.',
+    emoji: '💪',
     config: {
-      name: 'Expense Tracker',
-      description: 'Every dollar tracked. Every category visualized. Every budget respected.',
-      theme: { primary: '#d97706', accent: '#fbbf24', logoText: '💰 Budget' },
+      name: 'Fitness Tracker',
+      description: 'Track workouts, log meals, and visualize your fitness journey.',
+      theme: { primary: '#ea580c', accent: '#fb923c', logoText: '💪 Fit' },
       entities: [
-        { name: 'Expense', label: 'Expense', labelPlural: 'Expenses', fields: [
-          { name: 'description',   type: 'string', label: 'Description',  required: true, showInList: true, searchable: true },
-          { name: 'amount',        type: 'number', label: 'Amount ($)',   required: true, showInList: true, default: 0 },
-          { name: 'category',      type: 'select', label: 'Category',     showInList: true, options: [
-            { value: 'food',    label: '🍔 Food' }, { value: 'transport', label: '🚗 Transport' },
-            { value: 'housing', label: '🏠 Housing' }, { value: 'utilities', label: '💡 Utilities' },
-            { value: 'entertainment', label: '🎬 Entertainment' }, { value: 'health', label: '❤️ Health' },
-            { value: 'shopping', label: '🛍️ Shopping' }, { value: 'other', label: '📦 Other' },
+        { name: 'Workout', label: 'Workout', labelPlural: 'Workouts', fields: [
+          { name: 'date',        type: 'datetime', label: 'Date & Time',   required: true, showInList: true },
+          { name: 'type',        type: 'select',   label: 'Workout Type',  showInList: true, options: [
+            { value: 'strength', label: '🏋️ Strength' }, { value: 'cardio', label: '🏃 Cardio' },
+            { value: 'flexibility', label: '🧘 Flexibility' }, { value: 'sports', label: '⚽ Sports' },
           ]},
-          { name: 'date',          type: 'date',   label: 'Date',         required: true, showInList: true },
-          { name: 'paymentMethod', type: 'select', label: 'Paid With',    showInList: true, options: [
-            { value: 'cash', label: 'Cash' }, { value: 'card', label: 'Card' },
-            { value: 'bank', label: 'Bank Transfer' }, { value: 'upi', label: 'UPI / Wallet' },
+          { name: 'duration',    type: 'number',   label: 'Duration (min)', showInList: true },
+          { name: 'caloriesBurned', type: 'number', label: 'Calories Burned', showInList: true },
+          { name: 'intensity',   type: 'select',   label: 'Intensity',     showInList: true, options: [
+            { value: 'light', label: '🟢 Light' }, { value: 'moderate', label: '🟡 Moderate' },
+            { value: 'vigorous', label: '🔴 Vigorous' },
           ]},
-          { name: 'notes', type: 'text', label: 'Notes' },
+          { name: 'notes',       type: 'text',     label: 'Notes' },
         ]},
-        { name: 'Budget', label: 'Budget', labelPlural: 'Budgets', fields: [
-          { name: 'category', type: 'select', label: 'Category', required: true, showInList: true, options: [
-            { value: 'food', label: 'Food' }, { value: 'transport', label: 'Transport' },
-            { value: 'housing', label: 'Housing' }, { value: 'entertainment', label: 'Entertainment' },
-            { value: 'health', label: 'Health' }, { value: 'shopping', label: 'Shopping' },
+        { name: 'Exercise', label: 'Exercise', labelPlural: 'Exercise Library', fields: [
+          { name: 'name',        type: 'string', label: 'Exercise Name',   required: true, showInList: true, searchable: true },
+          { name: 'category',    type: 'select', label: 'Category',        showInList: true, options: [
+            { value: 'chest', label: '💪 Chest' }, { value: 'back', label: '🔙 Back' },
+            { value: 'legs', label: '🦵 Legs' }, { value: 'arms', label: '💪 Arms' },
+            { value: 'core', label: '⚡ Core' }, { value: 'cardio', label: '🏃 Cardio' },
           ]},
-          { name: 'limit',  type: 'number', label: 'Monthly Limit ($)', required: true, showInList: true },
-          { name: 'period', type: 'select', label: 'Period', showInList: true, default: 'monthly', options: [
-            { value: 'monthly', label: 'Monthly' }, { value: 'weekly', label: 'Weekly' },
+          { name: 'equipment',   type: 'select', label: 'Equipment',       showInList: true, options: [
+            { value: 'bodyweight', label: 'Bodyweight' }, { value: 'dumbbells', label: 'Dumbbells' },
+            { value: 'barbell', label: 'Barbell' }, { value: 'machine', label: 'Machine' },
           ]},
+          { name: 'difficulty',  type: 'select', label: 'Difficulty',      showInList: true, options: [
+            { value: 'beginner', label: '🟢 Beginner' }, { value: 'intermediate', label: '🟡 Intermediate' },
+            { value: 'advanced', label: '🔴 Advanced' },
+          ]},
+          { name: 'description', type: 'text',   label: 'Instructions' },
+        ]},
+        { name: 'Meal', label: 'Meal', labelPlural: 'Meals', fields: [
+          { name: 'date',        type: 'datetime', label: 'Date & Time',   required: true, showInList: true },
+          { name: 'mealType',    type: 'select',   label: 'Meal Type',     showInList: true, options: [
+            { value: 'breakfast', label: '🌅 Breakfast' }, { value: 'lunch', label: '☀️ Lunch' },
+            { value: 'dinner', label: '🌙 Dinner' }, { value: 'snack', label: '🥨 Snack' },
+          ]},
+          { name: 'description', type: 'string',   label: 'What You Ate',  required: true, showInList: true, searchable: true },
+          { name: 'calories',    type: 'number',   label: 'Calories',      showInList: true },
+          { name: 'protein',     type: 'number',   label: 'Protein (g)',   showInList: true },
+          { name: 'carbs',       type: 'number',   label: 'Carbs (g)',     showInList: true },
+          { name: 'fats',        type: 'number',   label: 'Fats (g)',      showInList: true },
+          { name: 'notes',       type: 'text',     label: 'Notes' },
+        ]},
+        { name: 'BodyMetric', label: 'Body Metric', labelPlural: 'Body Metrics', fields: [
+          { name: 'date',        type: 'date',   label: 'Date',           required: true, showInList: true },
+          { name: 'weight',      type: 'number', label: 'Weight (lbs)',   showInList: true },
+          { name: 'bodyFat',     type: 'number', label: 'Body Fat %',     showInList: true },
+          { name: 'muscleMass',  type: 'number', label: 'Muscle Mass (lbs)' },
+          { name: 'waist',       type: 'number', label: 'Waist (inches)' },
+          { name: 'chest',       type: 'number', label: 'Chest (inches)' },
+          { name: 'notes',       type: 'text',   label: 'Notes' },
         ]},
       ],
       pages: [
-        // HOME — finance-style: no hero, lead with numbers then charts
-        { id: 'home-h',     route: '/', title: 'Finance', root: { kind: 'heading', props: { text: 'My Finances', level: 1 }}},
-        { id: 'home-stats', route: '/', title: 'Finance', root: { kind: 'stats', props: { items: [
-          { label: 'Total Spent',  source: { entity: 'Expense', field: 'amount', op: 'sum' } },
-          { label: 'Transactions', source: { entity: 'Expense', op: 'count' } },
-          { label: 'Avg Expense',  source: { entity: 'Expense', field: 'amount', op: 'avg' } },
-          { label: 'Budgets Set',  source: { entity: 'Budget',  op: 'count' } },
+        // HOME — Fitness dashboard with recent activity
+        { id: 'home', route: '/', title: 'Dashboard', root: { kind: 'hero', props: {
+          title: 'Fitness Tracker', subtitle: 'Your complete fitness and nutrition journey.',
+          cta: 'Log Workout', ctaRoute: '/workouts/new',
+        }}},
+        { id: 'home-stats', route: '/', title: 'Dashboard', root: { kind: 'stats', props: { items: [
+          { label: 'Total Workouts',  source: { entity: 'Workout', op: 'count' } },
+          { label: 'Meals Logged',    source: { entity: 'Meal', op: 'count' } },
+          { label: 'Calories Burned', source: { entity: 'Workout', field: 'caloriesBurned', op: 'sum' } },
+          { label: 'Avg Workout (min)', source: { entity: 'Workout', field: 'duration', op: 'avg' } },
         ]}}},
-        // Two charts side-by-side on home (pie shows relative spending)
-        { id: 'home-pie', route: '/', title: 'By Category', root: { kind: 'chart', props: {
-          entity: 'Expense', groupBy: 'category', field: 'amount', title: 'Spending by Category', type: 'pie',
-        }}},
-        { id: 'home-bar', route: '/', title: 'By Payment', root: { kind: 'chart', props: {
-          entity: 'Expense', groupBy: 'paymentMethod', field: 'amount', title: 'Spending by Payment Method', type: 'bar',
-        }}},
-        { id: 'home-recent-h', route: '/', title: 'Recent', root: { kind: 'heading', props: { text: 'Recent Expenses', level: 2 }}},
-        { id: 'home-recent',   route: '/', title: 'Expenses', entity: 'Expense', root: { kind: 'table', props: { entity: 'Expense', pageSize: 8 }}},
-        { id: 'home-cta',      route: '/', title: 'Log', root: { kind: 'button', props: { label: '+ Log Expense', route: '/expenses/new', variant: 'primary' }}},
+        { id: 'home-workouts-h', route: '/', title: 'Recent', root: { kind: 'heading', props: { text: '💪 Recent Workouts', level: 2 }}},
+        { id: 'home-workouts', route: '/', title: 'Workouts', entity: 'Workout', root: { kind: 'table', props: { entity: 'Workout', pageSize: 5 }}},
 
-        // EXPENSES — charts above the table
-        { id: 'expenses-h',     route: '/expenses', title: 'Expenses', root: { kind: 'heading', props: { text: 'All Expenses', level: 1 }}},
-        { id: 'expenses-stats', route: '/expenses', title: 'Expenses', root: { kind: 'stats', props: { items: [
-          { label: 'Total', source: { entity: 'Expense', field: 'amount', op: 'sum' } },
-          { label: 'Count', source: { entity: 'Expense', op: 'count' } },
-          { label: 'Avg',   source: { entity: 'Expense', field: 'amount', op: 'avg' } },
+        // WORKOUTS — Full workout log with type breakdown
+        { id: 'workouts-h', route: '/workouts', title: 'Workouts', root: { kind: 'heading', props: { text: 'Workout Log', level: 1 }}},
+        { id: 'workouts-stats', route: '/workouts', title: 'Workouts', root: { kind: 'stats', props: { items: [
+          { label: 'Total Workouts', source: { entity: 'Workout', op: 'count' } },
+          { label: 'Total Duration', source: { entity: 'Workout', field: 'duration', op: 'sum' } },
         ]}}},
-        { id: 'expenses-chart', route: '/expenses', title: 'By Category', root: { kind: 'chart', props: {
-          entity: 'Expense', groupBy: 'category', field: 'amount', title: 'Spend by Category', type: 'bar',
+        { id: 'workouts-chart', route: '/workouts', title: 'Workouts', root: { kind: 'chart', props: {
+          entity: 'Workout', groupBy: 'type', title: 'Workouts by Type', type: 'pie',
         }}},
-        { id: 'expenses',     route: '/expenses',     title: 'Expenses', entity: 'Expense', root: { kind: 'table', props: { entity: 'Expense', pageSize: 30 }}},
-        { id: 'expenses-new', route: '/expenses/new', title: 'Log Expense', entity: 'Expense', root: { kind: 'form', props: { entity: 'Expense', mode: 'create', successRoute: '/expenses' }}},
+        { id: 'workouts', route: '/workouts', title: 'Workouts', entity: 'Workout', root: { kind: 'table', props: { entity: 'Workout', pageSize: 25 }}},
+        { id: 'workouts-new', route: '/workouts/new', title: 'Log Workout', entity: 'Workout', root: { kind: 'form', props: { entity: 'Workout', mode: 'create', successRoute: '/workouts' }}},
 
-        // BUDGETS
-        { id: 'budgets-h',   route: '/budgets',     title: 'Budgets', root: { kind: 'heading', props: { text: 'Monthly Budgets', level: 1 }}},
-        { id: 'budgets',     route: '/budgets',     title: 'Budgets', entity: 'Budget', root: { kind: 'table', props: { entity: 'Budget', pageSize: 20 }}},
-        { id: 'budgets-new', route: '/budgets/new', title: 'Set Budget', entity: 'Budget', root: { kind: 'form', props: { entity: 'Budget', mode: 'create', successRoute: '/budgets' }}},
+        // EXERCISES — Exercise library
+        { id: 'exercises-h', route: '/exercises', title: 'Exercises', root: { kind: 'heading', props: { text: 'Exercise Library', level: 1 }}},
+        { id: 'exercises-chart', route: '/exercises', title: 'Exercises', root: { kind: 'chart', props: {
+          entity: 'Exercise', groupBy: 'category', title: 'Exercises by Category', type: 'bar',
+        }}},
+        { id: 'exercises', route: '/exercises', title: 'Exercises', entity: 'Exercise', root: { kind: 'table', props: { entity: 'Exercise', pageSize: 30 }}},
+        { id: 'exercises-new', route: '/exercises/new', title: 'Add Exercise', entity: 'Exercise', root: { kind: 'form', props: { entity: 'Exercise', mode: 'create', successRoute: '/exercises' }}},
+
+        // NUTRITION — Meal log with calorie tracking
+        { id: 'nutrition-h', route: '/nutrition', title: 'Nutrition', root: { kind: 'heading', props: { text: 'Nutrition Log', level: 1 }}},
+        { id: 'nutrition-stats', route: '/nutrition', title: 'Nutrition', root: { kind: 'stats', props: { items: [
+          { label: 'Total Meals',    source: { entity: 'Meal', op: 'count' } },
+          { label: 'Total Calories', source: { entity: 'Meal', field: 'calories', op: 'sum' } },
+        ]}}},
+        { id: 'nutrition-chart', route: '/nutrition', title: 'Nutrition', root: { kind: 'chart', props: {
+          entity: 'Meal', groupBy: 'mealType', field: 'calories', title: 'Calories by Meal Type', type: 'bar',
+        }}},
+        { id: 'nutrition', route: '/nutrition', title: 'Nutrition', entity: 'Meal', root: { kind: 'table', props: { entity: 'Meal', pageSize: 25 }}},
+        { id: 'nutrition-new', route: '/nutrition/new', title: 'Log Meal', entity: 'Meal', root: { kind: 'form', props: { entity: 'Meal', mode: 'create', successRoute: '/nutrition' }}},
+
+        // PROGRESS — Body metrics timeline
+        { id: 'progress-h', route: '/progress', title: 'Progress', root: { kind: 'heading', props: { text: 'Progress Tracking', level: 1 }}},
+        { id: 'progress-timeline', route: '/progress', title: 'Progress', entity: 'BodyMetric', root: { kind: 'timeline', props: {
+          entity: 'BodyMetric', dateField: 'date', titleField: 'weight', descriptionField: 'bodyFat',
+        }}},
+        { id: 'progress-new', route: '/progress/new', title: 'Log Metrics', entity: 'BodyMetric', root: { kind: 'form', props: { entity: 'BodyMetric', mode: 'create', successRoute: '/progress' }}},
       ],
     },
   },
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 5. HABIT TRACKER — timeline for daily entries, streak table for habits
-  //    Unique: /log page uses TIMELINE component, not a table
+  // 5. EVENT PLANNER — Wedding/conference planning with vendor management
+  //    Unique: Event timeline, vendor directory, guest RSVP tracking
   // ══════════════════════════════════════════════════════════════════════════
   {
     id: 'habit-tracker',
-    name: 'Habit Tracker',
-    description: 'Build streaks. Daily log shown as a timeline.',
-    emoji: '🌱',
+    name: 'Event Planner',
+    description: 'Plan events, manage vendors, and track RSVPs.',
+    emoji: '🎉',
     config: {
-      name: 'Habit Tracker',
-      description: 'Build better habits, one day at a time.',
-      theme: { primary: '#7c3aed', accent: '#a855f7', logoText: '🌱 Habits' },
+      name: 'Event Planner',
+      description: 'Plan unforgettable events with vendor management and guest tracking.',
+      theme: { primary: '#db2777', accent: '#f472b6', logoText: '🎉 Events' },
       entities: [
-        { name: 'Habit', label: 'Habit', labelPlural: 'Habits', fields: [
-          { name: 'name',      type: 'string', label: 'Habit Name', required: true, showInList: true, searchable: true },
-          { name: 'category',  type: 'select', label: 'Category',   showInList: true, options: [
-            { value: 'health', label: '❤️ Health' }, { value: 'fitness', label: '💪 Fitness' },
-            { value: 'mindfulness', label: '🧘 Mindfulness' }, { value: 'productivity', label: '⚡ Productivity' },
-            { value: 'learning', label: '📚 Learning' }, { value: 'social', label: '👥 Social' },
+        { name: 'Event', label: 'Event', labelPlural: 'Events', fields: [
+          { name: 'name',        type: 'string',   label: 'Event Name',    required: true, showInList: true, searchable: true },
+          { name: 'type',        type: 'select',   label: 'Event Type',    showInList: true, options: [
+            { value: 'wedding', label: '💒 Wedding' }, { value: 'conference', label: '🎤 Conference' },
+            { value: 'party', label: '🎊 Party' }, { value: 'corporate', label: '💼 Corporate' },
           ]},
-          { name: 'frequency', type: 'select', label: 'Frequency', showInList: true, default: 'daily', options: [
-            { value: 'daily', label: 'Daily' }, { value: 'weekdays', label: 'Weekdays' }, { value: 'weekly', label: 'Weekly' },
+          { name: 'date',        type: 'datetime', label: 'Date & Time',   required: true, showInList: true },
+          { name: 'venue',       type: 'string',   label: 'Venue',         showInList: true },
+          { name: 'budget',      type: 'number',   label: 'Budget ($)',    showInList: true },
+          { name: 'guestCount',  type: 'number',   label: 'Expected Guests', showInList: true },
+          { name: 'status',      type: 'select',   label: 'Status',        showInList: true, options: [
+            { value: 'planning', label: '📋 Planning' }, { value: 'confirmed', label: '✅ Confirmed' },
+            { value: 'in_progress', label: '🎬 In Progress' }, { value: 'completed', label: '✔️ Completed' },
           ]},
-          { name: 'streak',     type: 'number', label: '🔥 Streak (days)',  showInList: true, default: 0 },
-          { name: 'bestStreak', type: 'number', label: '🏆 Best Streak',    showInList: true, default: 0 },
-          { name: 'lastDone',   type: 'date',   label: 'Last Completed',    showInList: true },
-          { name: 'goal',       type: 'text',   label: 'Goal / Motivation' },
+          { name: 'notes',       type: 'text',     label: 'Notes' },
         ]},
-        { name: 'Entry', label: 'Log Entry', labelPlural: 'Log Entries', fields: [
-          { name: 'habit',     type: 'relation', label: 'Habit',      entity: 'Habit', showInList: true },
-          { name: 'date',      type: 'date',    label: 'Date',        required: true, showInList: true },
-          { name: 'completed', type: 'boolean', label: 'Completed?',  default: true, showInList: true },
-          { name: 'mood',      type: 'select',  label: 'How did it feel?', showInList: true, options: [
-            { value: '5', label: '😄 Amazing' }, { value: '4', label: '🙂 Good' },
-            { value: '3', label: '😐 Okay' }, { value: '2', label: '😔 Struggled' }, { value: '1', label: '😞 Skipped' },
+        { name: 'Vendor', label: 'Vendor', labelPlural: 'Vendors', fields: [
+          { name: 'name',        type: 'string', label: 'Vendor Name',     required: true, showInList: true, searchable: true },
+          { name: 'category',    type: 'select', label: 'Category',        showInList: true, options: [
+            { value: 'catering', label: '🍽️ Catering' }, { value: 'photography', label: '📸 Photography' },
+            { value: 'music', label: '🎵 Music/DJ' }, { value: 'decoration', label: '🎨 Decoration' },
+            { value: 'venue', label: '🏛️ Venue' }, { value: 'other', label: '📦 Other' },
           ]},
-          { name: 'note', type: 'text', label: 'Note / Reflection' },
+          { name: 'contact',     type: 'string', label: 'Contact Person',  showInList: true },
+          { name: 'phone',       type: 'string', label: 'Phone',           showInList: true },
+          { name: 'email',       type: 'email',  label: 'Email' },
+          { name: 'cost',        type: 'number', label: 'Cost ($)',        showInList: true },
+          { name: 'status',      type: 'select', label: 'Status',          showInList: true, options: [
+            { value: 'inquiry', label: '📞 Inquiry' }, { value: 'booked', label: '✅ Booked' },
+            { value: 'paid', label: '💰 Paid' }, { value: 'completed', label: '✔️ Completed' },
+          ]},
+        ]},
+        { name: 'Guest', label: 'Guest', labelPlural: 'Guests', fields: [
+          { name: 'name',        type: 'string',   label: 'Full Name',     required: true, showInList: true, searchable: true },
+          { name: 'email',       type: 'email',    label: 'Email',         showInList: true },
+          { name: 'phone',       type: 'string',   label: 'Phone' },
+          { name: 'event',       type: 'relation', label: 'Event',         entity: 'Event', showInList: true },
+          { name: 'rsvpStatus',  type: 'select',   label: 'RSVP Status',   showInList: true, options: [
+            { value: 'pending', label: '🕐 Pending' }, { value: 'attending', label: '✅ Attending' },
+            { value: 'declined', label: '❌ Declined' }, { value: 'maybe', label: '❓ Maybe' },
+          ]},
+          { name: 'plusOnes',    type: 'number',   label: '+ Ones',        showInList: true, default: 0 },
+          { name: 'dietaryRestrictions', type: 'text', label: 'Dietary Restrictions' },
+        ]},
+        { name: 'Task', label: 'Task', labelPlural: 'Tasks', fields: [
+          { name: 'title',       type: 'string',   label: 'Task',          required: true, showInList: true, searchable: true },
+          { name: 'event',       type: 'relation', label: 'Event',         entity: 'Event', showInList: true },
+          { name: 'dueDate',     type: 'date',     label: 'Due Date',      showInList: true },
+          { name: 'status',      type: 'select',   label: 'Status',        showInList: true, options: [
+            { value: 'todo', label: '📝 To Do' }, { value: 'in_progress', label: '🔨 In Progress' },
+            { value: 'done', label: '✅ Done' },
+          ]},
+          { name: 'notes',       type: 'text',     label: 'Notes' },
         ]},
       ],
       pages: [
-        // HOME — streaks front and center
-        { id: 'home',       route: '/', title: 'My Habits', root: { kind: 'hero', props: {
-          title: '🌱 Habit Tracker', subtitle: 'Small daily actions create extraordinary results.',
-          cta: 'Log Today', ctaRoute: '/log/new',
+        // HOME — Event overview with upcoming timeline
+        { id: 'home', route: '/', title: 'Dashboard', root: { kind: 'hero', props: {
+          title: 'Event Planner', subtitle: 'Create memorable events with seamless planning and coordination.',
+          cta: 'New Event', ctaRoute: '/events/new',
         }}},
-        { id: 'home-stats', route: '/', title: 'My Habits', root: { kind: 'stats', props: { items: [
-          { label: 'Active Habits',  source: { entity: 'Habit', op: 'count' } },
-          { label: 'Total Streaks',  source: { entity: 'Habit', field: 'streak', op: 'sum' } },
-          { label: 'Best Streak',    source: { entity: 'Habit', field: 'bestStreak', op: 'avg' } },
-          { label: 'Entries Logged', source: { entity: 'Entry', op: 'count' } },
+        { id: 'home-stats', route: '/', title: 'Dashboard', root: { kind: 'stats', props: { items: [
+          { label: 'Active Events',  source: { entity: 'Event', op: 'count' } },
+          { label: 'Total Vendors',  source: { entity: 'Vendor', op: 'count' } },
+          { label: 'Total Guests',   source: { entity: 'Guest', op: 'count' } },
+          { label: 'Total Budget',   source: { entity: 'Event', field: 'budget', op: 'sum' } },
         ]}}},
-        { id: 'home-habits-h', route: '/', title: 'Habits', root: { kind: 'heading', props: { text: 'Active Habits & Streaks', level: 2 }}},
-        { id: 'home-habits',   route: '/', title: 'Habits', entity: 'Habit', root: { kind: 'table', props: { entity: 'Habit', pageSize: 10 }}},
-
-        // HABITS page — table + category chart
-        { id: 'habits-h',     route: '/habits', title: 'Habits', root: { kind: 'heading', props: { text: 'All Habits', level: 1 }}},
-        { id: 'habits-chart', route: '/habits', title: 'Habits', root: { kind: 'chart', props: {
-          entity: 'Habit', groupBy: 'category', title: 'Habits by Category', type: 'pie',
+        { id: 'home-events-h', route: '/', title: 'Events', root: { kind: 'heading', props: { text: '📅 Upcoming Events', level: 2 }}},
+        { id: 'home-events', route: '/', title: 'Events', entity: 'Event', root: { kind: 'timeline', props: {
+          entity: 'Event', dateField: 'date', titleField: 'name', descriptionField: 'venue',
         }}},
-        { id: 'habits',     route: '/habits',     title: 'Habits', entity: 'Habit', root: { kind: 'table', props: { entity: 'Habit', pageSize: 25 }}},
-        { id: 'habits-new', route: '/habits/new', title: 'Add Habit', entity: 'Habit', root: { kind: 'form', props: { entity: 'Habit', mode: 'create', successRoute: '/habits' }}},
 
-        // LOG — timeline view (unique: not a table, shows entries chronologically)
-        { id: 'log-h',       route: '/log', title: 'Daily Log', root: { kind: 'heading', props: { text: '📅 Daily Log', level: 1 }}},
-        { id: 'log-stats',   route: '/log', title: 'Daily Log', root: { kind: 'stats', props: { items: [
-          { label: 'Total Entries', source: { entity: 'Entry', op: 'count' } },
+        // EVENTS — Event list
+        { id: 'events-h', route: '/events', title: 'Events', root: { kind: 'heading', props: { text: 'All Events', level: 1 }}},
+        { id: 'events-chart', route: '/events', title: 'Events', root: { kind: 'chart', props: {
+          entity: 'Event', groupBy: 'type', title: 'Events by Type', type: 'pie',
+        }}},
+        { id: 'events', route: '/events', title: 'Events', entity: 'Event', root: { kind: 'table', props: { entity: 'Event', pageSize: 20 }}},
+        { id: 'events-new', route: '/events/new', title: 'New Event', entity: 'Event', root: { kind: 'form', props: { entity: 'Event', mode: 'create', successRoute: '/events' }}},
+
+        // VENDORS — Vendor directory with category breakdown
+        { id: 'vendors-h', route: '/vendors', title: 'Vendors', root: { kind: 'heading', props: { text: 'Vendor Directory', level: 1 }}},
+        { id: 'vendors-stats', route: '/vendors', title: 'Vendors', root: { kind: 'stats', props: { items: [
+          { label: 'Total Vendors', source: { entity: 'Vendor', op: 'count' } },
+          { label: 'Total Cost',    source: { entity: 'Vendor', field: 'cost', op: 'sum' } },
         ]}}},
-        { id: 'log-timeline', route: '/log', title: 'Log', entity: 'Entry', root: { kind: 'timeline', props: {
-          entity: 'Entry', dateField: 'date', titleField: 'habit', descriptionField: 'note',
+        { id: 'vendors-chart', route: '/vendors', title: 'Vendors', root: { kind: 'chart', props: {
+          entity: 'Vendor', groupBy: 'category', title: 'Vendors by Category', type: 'bar',
         }}},
-        { id: 'log-new', route: '/log/new', title: 'Log Entry', entity: 'Entry', root: { kind: 'form', props: { entity: 'Entry', mode: 'create', successRoute: '/log' }}},
+        { id: 'vendors', route: '/vendors', title: 'Vendors', entity: 'Vendor', root: { kind: 'table', props: { entity: 'Vendor', pageSize: 25 }}},
+        { id: 'vendors-new', route: '/vendors/new', title: 'Add Vendor', entity: 'Vendor', root: { kind: 'form', props: { entity: 'Vendor', mode: 'create', successRoute: '/vendors' }}},
 
-        // PROGRESS — completion chart
-        { id: 'progress-h',     route: '/progress', title: 'Progress', root: { kind: 'heading', props: { text: 'Progress Over Time', level: 1 }}},
-        { id: 'progress-chart', route: '/progress', title: 'Progress', root: { kind: 'chart', props: {
-          entity: 'Entry', groupBy: 'date', title: 'Daily Completions', type: 'bar',
+        // GUESTS — Guest list with RSVP tracking
+        { id: 'guests-h', route: '/guests', title: 'Guests', root: { kind: 'heading', props: { text: 'Guest List', level: 1 }}},
+        { id: 'guests-chart', route: '/guests', title: 'Guests', root: { kind: 'chart', props: {
+          entity: 'Guest', groupBy: 'rsvpStatus', title: 'RSVP Status', type: 'pie',
         }}},
-        { id: 'progress-mood',  route: '/progress', title: 'Progress', root: { kind: 'chart', props: {
-          entity: 'Entry', groupBy: 'mood', title: 'Mood Distribution', type: 'pie',
+        { id: 'guests', route: '/guests', title: 'Guests', entity: 'Guest', root: { kind: 'table', props: { entity: 'Guest', pageSize: 30 }}},
+        { id: 'guests-new', route: '/guests/new', title: 'Add Guest', entity: 'Guest', root: { kind: 'form', props: { entity: 'Guest', mode: 'create', successRoute: '/guests' }}},
+
+        // TASKS — Task kanban board
+        { id: 'tasks-h', route: '/tasks', title: 'Tasks', root: { kind: 'heading', props: { text: 'Planning Tasks', level: 1 }}},
+        { id: 'tasks-kanban', route: '/tasks', title: 'Tasks', entity: 'Task', root: { kind: 'kanban', props: {
+          entity: 'Task', groupBy: 'status',
+          columns: ['todo', 'in_progress', 'done'],
         }}},
+        { id: 'tasks-new', route: '/tasks/new', title: 'Add Task', entity: 'Task', root: { kind: 'form', props: { entity: 'Task', mode: 'create', successRoute: '/tasks' }}},
       ],
     },
   },
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 6. PERSONAL LIBRARY — reading-list focused, status-driven, no charts
-  //    Unique: minimal/clean — /reading shows only in-progress books,
-  //    /done shows completed, /wishlist shows want-to-read
+  // 6. LEARNING PLATFORM — Online course management with student progress
+  //    Unique: Course curriculum, lesson completion tracking, quiz results
   // ══════════════════════════════════════════════════════════════════════════
   {
     id: 'library',
-    name: 'Personal Library',
-    description: 'Catalog books, movies, courses — with status lists.',
-    emoji: '📚',
+    name: 'Learning Platform',
+    description: 'Course creation, student enrollment, and progress tracking.',
+    emoji: '🎓',
     config: {
-      name: 'My Library',
-      description: 'Everything you\'ve read, watched, or learned.',
-      theme: { primary: '#0f766e', accent: '#2dd4bf', logoText: '📚 Library' },
+      name: 'Learning Platform',
+      description: 'Build courses, enroll students, and track learning progress.',
+      theme: { primary: '#0369a1', accent: '#0ea5e9', logoText: '🎓 Learn' },
       entities: [
-        { name: 'Item', label: 'Item', labelPlural: 'Items', fields: [
-          { name: 'title',  type: 'string', label: 'Title',  required: true, showInList: true, searchable: true },
-          { name: 'author', type: 'string', label: 'Author / Creator', showInList: true },
-          { name: 'type',   type: 'select', label: 'Type', showInList: true, options: [
-            { value: 'book',    label: '📖 Book' }, { value: 'movie',   label: '🎬 Movie' },
-            { value: 'podcast', label: '🎙️ Podcast' }, { value: 'course', label: '🎓 Course' },
-            { value: 'article', label: '📄 Article' },
+        { name: 'Course', label: 'Course', labelPlural: 'Courses', fields: [
+          { name: 'title',       type: 'string', label: 'Course Title',   required: true, showInList: true, searchable: true },
+          { name: 'category',    type: 'select', label: 'Category',       showInList: true, options: [
+            { value: 'programming', label: '💻 Programming' }, { value: 'design', label: '🎨 Design' },
+            { value: 'business', label: '💼 Business' }, { value: 'marketing', label: '📈 Marketing' },
+            { value: 'data', label: '📊 Data Science' },
           ]},
-          { name: 'status', type: 'select', label: 'Status', showInList: true, options: [
-            { value: 'wishlist', label: '⭐ Wishlist' }, { value: 'reading', label: '📖 Reading Now' },
-            { value: 'done',     label: '✅ Finished' }, { value: 'dropped', label: '❌ Dropped' },
-          ], default: 'wishlist' },
-          { name: 'rating', type: 'number', label: 'Rating (1–5)', showInList: true, default: 0 },
-          { name: 'genre',  type: 'string', label: 'Genre / Tags',  showInList: true },
-          { name: 'year',   type: 'number', label: 'Year' },
-          { name: 'review', type: 'text',   label: 'Review / Notes' },
-        ]},
-        { name: 'Collection', label: 'Collection', labelPlural: 'Collections', fields: [
-          { name: 'name',        type: 'string', label: 'Name',        required: true, showInList: true },
+          { name: 'level',       type: 'select', label: 'Level',          showInList: true, options: [
+            { value: 'beginner', label: '🟢 Beginner' }, { value: 'intermediate', label: '🟡 Intermediate' },
+            { value: 'advanced', label: '🔴 Advanced' },
+          ]},
+          { name: 'price',       type: 'number', label: 'Price ($)',      showInList: true },
+          { name: 'duration',    type: 'number', label: 'Duration (hours)', showInList: true },
+          { name: 'instructor',  type: 'string', label: 'Instructor',     showInList: true },
+          { name: 'status',      type: 'select', label: 'Status',         showInList: true, options: [
+            { value: 'draft', label: '📝 Draft' }, { value: 'published', label: '✅ Published' },
+            { value: 'archived', label: '📦 Archived' },
+          ]},
           { name: 'description', type: 'text',   label: 'Description' },
-          { name: 'type',        type: 'select', label: 'Type', showInList: true, options: [
-            { value: 'reading_list', label: 'Reading List' }, { value: 'watchlist', label: 'Watchlist' },
-            { value: 'favourites',   label: 'Favourites' },   { value: 'custom', label: 'Custom' },
+        ]},
+        { name: 'Lesson', label: 'Lesson', labelPlural: 'Lessons', fields: [
+          { name: 'title',       type: 'string',   label: 'Lesson Title',  required: true, showInList: true, searchable: true },
+          { name: 'course',      type: 'relation', label: 'Course',        entity: 'Course', required: true, showInList: true },
+          { name: 'order',       type: 'number',   label: 'Order',         showInList: true },
+          { name: 'type',        type: 'select',   label: 'Type',          showInList: true, options: [
+            { value: 'video', label: '🎥 Video' }, { value: 'reading', label: '📖 Reading' },
+            { value: 'quiz', label: '📝 Quiz' }, { value: 'project', label: '🛠️ Project' },
+          ]},
+          { name: 'duration',    type: 'number',   label: 'Duration (min)' },
+          { name: 'content',     type: 'text',     label: 'Content/URL' },
+        ]},
+        { name: 'Student', label: 'Student', labelPlural: 'Students', fields: [
+          { name: 'name',        type: 'string', label: 'Full Name',      required: true, showInList: true, searchable: true },
+          { name: 'email',       type: 'email',  label: 'Email',          required: true, showInList: true },
+          { name: 'phone',       type: 'string', label: 'Phone' },
+          { name: 'enrolledDate', type: 'date',  label: 'Enrolled Date',  showInList: true },
+          { name: 'status',      type: 'select', label: 'Status',         showInList: true, options: [
+            { value: 'active', label: '✅ Active' }, { value: 'inactive', label: '⏸️ Inactive' },
+            { value: 'graduated', label: '🎓 Graduated' },
+          ]},
+        ]},
+        { name: 'Enrollment', label: 'Enrollment', labelPlural: 'Enrollments', fields: [
+          { name: 'student',     type: 'relation', label: 'Student',      entity: 'Student', required: true, showInList: true },
+          { name: 'course',      type: 'relation', label: 'Course',       entity: 'Course', required: true, showInList: true },
+          { name: 'enrolledDate', type: 'date',    label: 'Enrolled On',  showInList: true },
+          { name: 'progress',    type: 'number',   label: 'Progress %',   showInList: true, default: 0 },
+          { name: 'status',      type: 'select',   label: 'Status',       showInList: true, options: [
+            { value: 'in_progress', label: '📚 In Progress' }, { value: 'completed', label: '✅ Completed' },
+            { value: 'dropped', label: '❌ Dropped' },
           ]},
         ]},
       ],
       pages: [
-        // HOME — stats + chart by type + current reading
-        { id: 'home',       route: '/', title: 'Library', root: { kind: 'hero', props: {
-          title: '📚 My Library', subtitle: 'Track everything you read, watch, and learn.',
-          cta: 'Add Item', ctaRoute: '/items/new',
+        // HOME — Course catalog overview
+        { id: 'home', route: '/', title: 'Dashboard', root: { kind: 'hero', props: {
+          title: 'Learning Platform', subtitle: 'Create courses, enroll students, and track learning outcomes.',
+          cta: 'New Course', ctaRoute: '/courses/new',
         }}},
-        { id: 'home-stats', route: '/', title: 'Library', root: { kind: 'stats', props: { items: [
-          { label: 'Total Items', source: { entity: 'Item', op: 'count' } },
-          { label: 'Finished',    source: { entity: 'Item', op: 'count' } },
-          { label: 'Avg Rating',  source: { entity: 'Item', field: 'rating', op: 'avg' } },
-          { label: 'Collections', source: { entity: 'Collection', op: 'count' } },
+        { id: 'home-stats', route: '/', title: 'Dashboard', root: { kind: 'stats', props: { items: [
+          { label: 'Total Courses',     source: { entity: 'Course', op: 'count' } },
+          { label: 'Total Students',    source: { entity: 'Student', op: 'count' } },
+          { label: 'Total Enrollments', source: { entity: 'Enrollment', op: 'count' } },
+          { label: 'Avg Course Price',  source: { entity: 'Course', field: 'price', op: 'avg' } },
         ]}}},
-        { id: 'home-reading-h', route: '/', title: 'Reading Now', root: { kind: 'heading', props: { text: '📖 Currently Reading / Watching', level: 2 }}},
-        { id: 'home-reading',   route: '/', title: 'Items', entity: 'Item', root: { kind: 'table', props: { entity: 'Item', pageSize: 5 }}},
+        { id: 'home-courses-h', route: '/', title: 'Courses', root: { kind: 'heading', props: { text: '📚 Featured Courses', level: 2 }}},
+        { id: 'home-courses', route: '/', title: 'Courses', entity: 'Course', root: { kind: 'table', props: { entity: 'Course', pageSize: 6 }}},
 
-        // ALL ITEMS — full catalogue with rating chart
-        { id: 'items-h',     route: '/items', title: 'All Items', root: { kind: 'heading', props: { text: 'Full Collection', level: 1 }}},
-        { id: 'items-stats', route: '/items', title: 'Items',     root: { kind: 'stats', props: { items: [
-          { label: 'Total',     source: { entity: 'Item', op: 'count' } },
-          { label: 'Avg Rating', source: { entity: 'Item', field: 'rating', op: 'avg' } },
-        ]}}},
-        { id: 'items-type-chart', route: '/items', title: 'By Type', root: { kind: 'chart', props: {
-          entity: 'Item', groupBy: 'type', title: 'Collection by Type', type: 'pie',
+        // COURSES — Full course catalog
+        { id: 'courses-h', route: '/courses', title: 'Courses', root: { kind: 'heading', props: { text: 'Course Catalog', level: 1 }}},
+        { id: 'courses-chart', route: '/courses', title: 'Courses', root: { kind: 'chart', props: {
+          entity: 'Course', groupBy: 'category', title: 'Courses by Category', type: 'pie',
         }}},
-        { id: 'items',     route: '/items',     title: 'Items', entity: 'Item', root: { kind: 'table', props: { entity: 'Item', pageSize: 30 }}},
-        { id: 'items-new', route: '/items/new', title: 'Add Item', entity: 'Item', root: { kind: 'form', props: { entity: 'Item', mode: 'create', successRoute: '/items' }}},
+        { id: 'courses', route: '/courses', title: 'Courses', entity: 'Course', root: { kind: 'table', props: { entity: 'Course', pageSize: 25 }}},
+        { id: 'courses-new', route: '/courses/new', title: 'New Course', entity: 'Course', root: { kind: 'form', props: { entity: 'Course', mode: 'create', successRoute: '/courses' }}},
 
-        // WISHLIST — filtered view (want-to-read only concept via table)
-        { id: 'wishlist-h', route: '/wishlist', title: 'Wishlist', root: { kind: 'heading', props: { text: '⭐ Wishlist', level: 1 }}},
-        { id: 'wishlist',   route: '/wishlist', title: 'Wishlist', entity: 'Item', root: { kind: 'table', props: { entity: 'Item', pageSize: 20 }}},
+        // LESSONS — Curriculum management
+        { id: 'lessons-h', route: '/lessons', title: 'Lessons', root: { kind: 'heading', props: { text: 'Course Curriculum', level: 1 }}},
+        { id: 'lessons', route: '/lessons', title: 'Lessons', entity: 'Lesson', root: { kind: 'table', props: { entity: 'Lesson', pageSize: 30 }}},
+        { id: 'lessons-new', route: '/lessons/new', title: 'New Lesson', entity: 'Lesson', root: { kind: 'form', props: { entity: 'Lesson', mode: 'create', successRoute: '/lessons' }}},
 
-        // COLLECTIONS
-        { id: 'collections-h',   route: '/collections',     title: 'Collections', root: { kind: 'heading', props: { text: 'My Collections', level: 1 }}},
-        { id: 'collections',     route: '/collections',     title: 'Collections', entity: 'Collection', root: { kind: 'table', props: { entity: 'Collection', pageSize: 20 }}},
-        { id: 'collections-new', route: '/collections/new', title: 'New Collection', entity: 'Collection', root: { kind: 'form', props: { entity: 'Collection', mode: 'create', successRoute: '/collections' }}},
+        // STUDENTS — Student directory
+        { id: 'students-h', route: '/students', title: 'Students', root: { kind: 'heading', props: { text: 'Student Directory', level: 1 }}},
+        { id: 'students-chart', route: '/students', title: 'Students', root: { kind: 'chart', props: {
+          entity: 'Student', groupBy: 'status', title: 'Students by Status', type: 'bar',
+        }}},
+        { id: 'students', route: '/students', title: 'Students', entity: 'Student', root: { kind: 'table', props: { entity: 'Student', pageSize: 25 }}},
+        { id: 'students-new', route: '/students/new', title: 'New Student', entity: 'Student', root: { kind: 'form', props: { entity: 'Student', mode: 'create', successRoute: '/students' }}},
+
+        // ENROLLMENTS — Progress tracking
+        { id: 'enrollments-h', route: '/enrollments', title: 'Enrollments', root: { kind: 'heading', props: { text: 'Enrollment & Progress', level: 1 }}},
+        { id: 'enrollments', route: '/enrollments', title: 'Enrollments', entity: 'Enrollment', root: { kind: 'table', props: { entity: 'Enrollment', pageSize: 30 }}},
+        { id: 'enrollments-new', route: '/enrollments/new', title: 'New Enrollment', entity: 'Enrollment', root: { kind: 'form', props: { entity: 'Enrollment', mode: 'create', successRoute: '/enrollments' }}},
       ],
     },
   },
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 7. HR DASHBOARD — org chart view, headcount charts before tables
-  //    Unique: home shows a department bar chart before any employee table;
-  //    /reports is a pure-charts page
+  // 7. HOSPITAL MANAGER — Patient records, appointments, staff scheduling
+  //    Unique: Patient timeline, appointment calendar, medical records
   // ══════════════════════════════════════════════════════════════════════════
   {
     id: 'hr',
-    name: 'HR Dashboard',
-    description: 'Headcount charts, employee directory, leave tracker.',
-    emoji: '👥',
+    name: 'Hospital Manager',
+    description: 'Patient management, appointments, and medical records.',
+    emoji: '🏥',
     config: {
-      name: 'HR Dashboard',
-      description: 'Headcount. Leave. Departments. All in one place.',
-      theme: { primary: '#4f46e5', accent: '#818cf8', logoText: '👥 People' },
+      name: 'Hospital Manager',
+      description: 'Comprehensive patient care with appointment and records management.',
+      theme: { primary: '#16a34a', accent: '#22c55e', logoText: '🏥 Care' },
       entities: [
-        { name: 'Employee', label: 'Employee', labelPlural: 'Employees', fields: [
-          { name: 'name',       type: 'string', label: 'Full Name',   required: true, showInList: true, searchable: true },
-          { name: 'email',      type: 'email',  label: 'Work Email',  showInList: true },
-          { name: 'department', type: 'select', label: 'Department',  showInList: true, options: [
-            { value: 'engineering', label: 'Engineering' }, { value: 'design', label: 'Design' },
-            { value: 'marketing',   label: 'Marketing' },   { value: 'sales', label: 'Sales' },
-            { value: 'hr',          label: 'HR' },           { value: 'finance', label: 'Finance' },
+        { name: 'Patient', label: 'Patient', labelPlural: 'Patients', fields: [
+          { name: 'name',        type: 'string', label: 'Full Name',      required: true, showInList: true, searchable: true },
+          { name: 'dateOfBirth', type: 'date',   label: 'Date of Birth',  showInList: true },
+          { name: 'gender',      type: 'select', label: 'Gender',         showInList: true, options: [
+            { value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }, { value: 'other', label: 'Other' },
           ]},
-          { name: 'role',      type: 'string', label: 'Job Title',    showInList: true },
-          { name: 'startDate', type: 'date',   label: 'Start Date',   showInList: true },
-          { name: 'status',    type: 'select', label: 'Status',       showInList: true, options: [
-            { value: 'active', label: 'Active' }, { value: 'on_leave', label: 'On Leave' }, { value: 'terminated', label: 'Terminated' },
+          { name: 'phone',       type: 'string', label: 'Phone',          showInList: true },
+          { name: 'email',       type: 'email',  label: 'Email' },
+          { name: 'address',     type: 'text',   label: 'Address' },
+          { name: 'bloodType',   type: 'select', label: 'Blood Type',     showInList: true, options: [
+            { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' },
+            { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' },
+            { value: 'O+', label: 'O+' }, { value: 'O-', label: 'O-' },
+            { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' },
           ]},
-          { name: 'salary', type: 'number', label: 'Annual Salary ($)' },
+          { name: 'allergies',   type: 'text',   label: 'Allergies' },
         ]},
-        { name: 'LeaveRequest', label: 'Leave Request', labelPlural: 'Leave Requests', fields: [
-          { name: 'employee',  type: 'relation', label: 'Employee',   entity: 'Employee', showInList: true },
-          { name: 'type',      type: 'select',   label: 'Leave Type', showInList: true, options: [
-            { value: 'vacation', label: 'Vacation' }, { value: 'sick', label: 'Sick Leave' },
-            { value: 'personal', label: 'Personal' }, { value: 'maternity', label: 'Maternity/Paternity' },
+        { name: 'Doctor', label: 'Doctor', labelPlural: 'Doctors', fields: [
+          { name: 'name',         type: 'string', label: 'Full Name',      required: true, showInList: true, searchable: true },
+          { name: 'specialty',    type: 'select', label: 'Specialty',      showInList: true, options: [
+            { value: 'cardiology', label: '❤️ Cardiology' }, { value: 'neurology', label: '🧠 Neurology' },
+            { value: 'pediatrics', label: '👶 Pediatrics' }, { value: 'orthopedics', label: '🦴 Orthopedics' },
+            { value: 'general', label: '🩺 General Practice' },
           ]},
-          { name: 'startDate', type: 'date',   label: 'From',   required: true, showInList: true },
-          { name: 'endDate',   type: 'date',   label: 'To',     required: true, showInList: true },
-          { name: 'status',    type: 'select', label: 'Status', showInList: true, options: [
-            { value: 'pending', label: '🕐 Pending' }, { value: 'approved', label: '✅ Approved' }, { value: 'rejected', label: '❌ Rejected' },
+          { name: 'phone',        type: 'string', label: 'Phone',          showInList: true },
+          { name: 'email',        type: 'email',  label: 'Email' },
+          { name: 'licenseNumber', type: 'string', label: 'License #',     showInList: true },
+          { name: 'status',       type: 'select', label: 'Status',         showInList: true, options: [
+            { value: 'active', label: '✅ Active' }, { value: 'on_leave', label: '🏖️ On Leave' },
           ]},
-          { name: 'reason', type: 'text', label: 'Reason' },
+        ]},
+        { name: 'Appointment', label: 'Appointment', labelPlural: 'Appointments', fields: [
+          { name: 'patient',     type: 'relation', label: 'Patient',      entity: 'Patient', required: true, showInList: true },
+          { name: 'doctor',      type: 'relation', label: 'Doctor',       entity: 'Doctor', required: true, showInList: true },
+          { name: 'dateTime',    type: 'datetime', label: 'Date & Time',  required: true, showInList: true },
+          { name: 'type',        type: 'select',   label: 'Type',         showInList: true, options: [
+            { value: 'consultation', label: '🩺 Consultation' }, { value: 'followup', label: '🔄 Follow-up' },
+            { value: 'emergency', label: '🚨 Emergency' }, { value: 'surgery', label: '⚕️ Surgery' },
+          ]},
+          { name: 'status',      type: 'select',   label: 'Status',       showInList: true, options: [
+            { value: 'scheduled', label: '📅 Scheduled' }, { value: 'completed', label: '✅ Completed' },
+            { value: 'cancelled', label: '❌ Cancelled' }, { value: 'no_show', label: '👻 No Show' },
+          ]},
+          { name: 'notes',       type: 'text',     label: 'Notes' },
+        ]},
+        { name: 'MedicalRecord', label: 'Medical Record', labelPlural: 'Medical Records', fields: [
+          { name: 'patient',     type: 'relation', label: 'Patient',      entity: 'Patient', required: true, showInList: true },
+          { name: 'doctor',      type: 'relation', label: 'Doctor',       entity: 'Doctor', showInList: true },
+          { name: 'date',        type: 'date',     label: 'Date',         required: true, showInList: true },
+          { name: 'diagnosis',   type: 'string',   label: 'Diagnosis',    required: true, showInList: true },
+          { name: 'treatment',   type: 'text',     label: 'Treatment Plan' },
+          { name: 'prescription', type: 'text',    label: 'Prescription' },
+          { name: 'notes',       type: 'text',     label: 'Notes' },
         ]},
       ],
       pages: [
-        // HOME — org breakdown chart is the FIRST thing you see
-        { id: 'home-h',     route: '/', title: 'People Dashboard', root: { kind: 'heading', props: { text: 'People Dashboard', level: 1 }}},
-        { id: 'home-stats', route: '/', title: 'People', root: { kind: 'stats', props: { items: [
-          { label: 'Total Headcount',  source: { entity: 'Employee', op: 'count' } },
-          { label: 'Active Employees', source: { entity: 'Employee', op: 'count' } },
-          { label: 'Pending Leave',    source: { entity: 'LeaveRequest', op: 'count' } },
-          { label: 'Avg Salary',       source: { entity: 'Employee', field: 'salary', op: 'avg' } },
+        // HOME — Today's appointments and patient overview
+        { id: 'home', route: '/', title: 'Dashboard', root: { kind: 'hero', props: {
+          title: 'Hospital Manager', subtitle: 'Patient care management with appointment scheduling and medical records.',
+          cta: 'New Appointment', ctaRoute: '/appointments/new',
+        }}},
+        { id: 'home-stats', route: '/', title: 'Dashboard', root: { kind: 'stats', props: { items: [
+          { label: 'Total Patients',       source: { entity: 'Patient', op: 'count' } },
+          { label: 'Active Doctors',       source: { entity: 'Doctor', op: 'count' } },
+          { label: 'Today\'s Appointments', source: { entity: 'Appointment', op: 'count' } },
+          { label: 'Medical Records',      source: { entity: 'MedicalRecord', op: 'count' } },
         ]}}},
-        // Org chart bar — shown before any table
-        { id: 'home-dept-chart', route: '/', title: 'By Dept', root: { kind: 'chart', props: {
-          entity: 'Employee', groupBy: 'department', title: 'Headcount by Department', type: 'bar',
+        { id: 'home-appointments-h', route: '/', title: 'Appointments', root: { kind: 'heading', props: { text: '📅 Today\'s Schedule', level: 2 }}},
+        { id: 'home-appointments', route: '/', title: 'Appointments', entity: 'Appointment', root: { kind: 'timeline', props: {
+          entity: 'Appointment', dateField: 'dateTime', titleField: 'patient', descriptionField: 'type',
         }}},
-        { id: 'home-leave-h', route: '/', title: 'Leave', root: { kind: 'heading', props: { text: '📋 Pending Leave Requests', level: 2 }}},
-        { id: 'home-leave',   route: '/', title: 'Leave', entity: 'LeaveRequest', root: { kind: 'table', props: { entity: 'LeaveRequest', pageSize: 5 }}},
 
-        // EMPLOYEES — table + salary chart
-        { id: 'employees-h',     route: '/employees', title: 'Employees', root: { kind: 'heading', props: { text: 'Employee Directory', level: 1 }}},
-        { id: 'employees-stats', route: '/employees', title: 'Employees', root: { kind: 'stats', props: { items: [
-          { label: 'Total Employees', source: { entity: 'Employee', op: 'count' } },
-          { label: 'Avg Salary',      source: { entity: 'Employee', field: 'salary', op: 'avg' } },
+        // PATIENTS — Patient directory
+        { id: 'patients-h', route: '/patients', title: 'Patients', root: { kind: 'heading', props: { text: 'Patient Directory', level: 1 }}},
+        { id: 'patients-chart', route: '/patients', title: 'Patients', root: { kind: 'chart', props: {
+          entity: 'Patient', groupBy: 'bloodType', title: 'Patients by Blood Type', type: 'bar',
+        }}},
+        { id: 'patients', route: '/patients', title: 'Patients', entity: 'Patient', root: { kind: 'table', props: { entity: 'Patient', pageSize: 25 }}},
+        { id: 'patients-new', route: '/patients/new', title: 'New Patient', entity: 'Patient', root: { kind: 'form', props: { entity: 'Patient', mode: 'create', successRoute: '/patients' }}},
+
+        // DOCTORS — Doctor directory
+        { id: 'doctors-h', route: '/doctors', title: 'Doctors', root: { kind: 'heading', props: { text: 'Medical Staff', level: 1 }}},
+        { id: 'doctors-chart', route: '/doctors', title: 'Doctors', root: { kind: 'chart', props: {
+          entity: 'Doctor', groupBy: 'specialty', title: 'Doctors by Specialty', type: 'pie',
+        }}},
+        { id: 'doctors', route: '/doctors', title: 'Doctors', entity: 'Doctor', root: { kind: 'table', props: { entity: 'Doctor', pageSize: 20 }}},
+        { id: 'doctors-new', route: '/doctors/new', title: 'Add Doctor', entity: 'Doctor', root: { kind: 'form', props: { entity: 'Doctor', mode: 'create', successRoute: '/doctors' }}},
+
+        // APPOINTMENTS — Full appointment calendar
+        { id: 'appointments-h', route: '/appointments', title: 'Appointments', root: { kind: 'heading', props: { text: 'Appointment Calendar', level: 1 }}},
+        { id: 'appointments-stats', route: '/appointments', title: 'Appointments', root: { kind: 'stats', props: { items: [
+          { label: 'Total Appointments', source: { entity: 'Appointment', op: 'count' } },
         ]}}},
-        { id: 'employees',     route: '/employees',     title: 'Employees', entity: 'Employee', root: { kind: 'table', props: { entity: 'Employee', pageSize: 25 }}},
-        { id: 'employees-new', route: '/employees/new', title: 'Add Employee', entity: 'Employee', root: { kind: 'form', props: { entity: 'Employee', mode: 'create', successRoute: '/employees' }}},
+        { id: 'appointments', route: '/appointments', title: 'Appointments', entity: 'Appointment', root: { kind: 'table', props: { entity: 'Appointment', pageSize: 30 }}},
+        { id: 'appointments-new', route: '/appointments/new', title: 'Schedule Appointment', entity: 'Appointment', root: { kind: 'form', props: { entity: 'Appointment', mode: 'create', successRoute: '/appointments' }}},
 
-        // LEAVE
-        { id: 'leave-h',   route: '/leaverequests',     title: 'Leave', root: { kind: 'heading', props: { text: 'Leave Requests', level: 1 }}},
-        { id: 'leave',     route: '/leaverequests',     title: 'Leave', entity: 'LeaveRequest', root: { kind: 'table', props: { entity: 'LeaveRequest', pageSize: 25 }}},
-        { id: 'leave-new', route: '/leaverequests/new', title: 'Request Leave', entity: 'LeaveRequest', root: { kind: 'form', props: { entity: 'LeaveRequest', mode: 'create', successRoute: '/leaverequests' }}},
-
-        // REPORTS — pure charts page (no tables at all)
-        { id: 'reports-h',      route: '/reports', title: 'Reports', root: { kind: 'heading', props: { text: 'HR Reports', level: 1 }}},
-        { id: 'reports-dept',   route: '/reports', title: 'Reports', root: { kind: 'chart', props: {
-          entity: 'Employee', groupBy: 'department', title: 'Headcount by Department', type: 'bar',
+        // RECORDS — Medical records timeline
+        { id: 'records-h', route: '/records', title: 'Records', root: { kind: 'heading', props: { text: 'Medical Records', level: 1 }}},
+        { id: 'records-timeline', route: '/records', title: 'Records', entity: 'MedicalRecord', root: { kind: 'timeline', props: {
+          entity: 'MedicalRecord', dateField: 'date', titleField: 'patient', descriptionField: 'diagnosis',
         }}},
-        { id: 'reports-status', route: '/reports', title: 'Reports', root: { kind: 'chart', props: {
-          entity: 'Employee', groupBy: 'status', title: 'Employment Status', type: 'pie',
-        }}},
-        { id: 'reports-leave',  route: '/reports', title: 'Reports', root: { kind: 'chart', props: {
-          entity: 'LeaveRequest', groupBy: 'type', title: 'Leave by Type', type: 'pie',
-        }}},
+        { id: 'records-new', route: '/records/new', title: 'New Record', entity: 'MedicalRecord', root: { kind: 'form', props: { entity: 'MedicalRecord', mode: 'create', successRoute: '/records' }}},
       ],
     },
   },
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 8. E-COMMERCE — order timeline + revenue charts; product grid table
-  //    Unique: /orders uses TIMELINE (not a table), /analytics is chart-only
+  // 8. HOTEL MANAGER — Room bookings, guest management, housekeeping
+  //    Unique: Booking timeline, room status kanban, guest check-in/out
   // ══════════════════════════════════════════════════════════════════════════
   {
     id: 'ecommerce',
-    name: 'Shop Manager',
-    description: 'Product catalogue, order timeline, and revenue analytics.',
-    emoji: '🛍️',
+    name: 'Hotel Manager',
+    description: 'Room bookings, guest services, and housekeeping management.',
+    emoji: '🏨',
     config: {
-      name: 'Shop Manager',
-      description: 'Products. Orders. Revenue — all in one dashboard.',
-      theme: { primary: '#059669', accent: '#34d399', logoText: '🛍️ Shop' },
+      name: 'Hotel Manager',
+      description: 'Manage bookings, guests, and rooms with complete hotel operations.',
+      theme: { primary: '#7c2d12', accent: '#ea580c', logoText: '🏨 Hotel' },
       entities: [
-        { name: 'Product', label: 'Product', labelPlural: 'Products', fields: [
-          { name: 'name',     type: 'string', label: 'Product Name', required: true, showInList: true, searchable: true },
-          { name: 'sku',      type: 'string', label: 'SKU',          showInList: true },
-          { name: 'price',    type: 'number', label: 'Price ($)',    required: true, showInList: true },
-          { name: 'stock',    type: 'number', label: 'Stock',        showInList: true, default: 0 },
-          { name: 'category', type: 'select', label: 'Category',     showInList: true, options: [
-            { value: 'electronics', label: 'Electronics' }, { value: 'clothing', label: 'Clothing' },
-            { value: 'books',       label: 'Books' },       { value: 'beauty', label: 'Beauty' },
-            { value: 'home',        label: 'Home & Garden' },
+        { name: 'Room', label: 'Room', labelPlural: 'Rooms', fields: [
+          { name: 'roomNumber',  type: 'string', label: 'Room Number',    required: true, showInList: true },
+          { name: 'type',        type: 'select', label: 'Room Type',      showInList: true, options: [
+            { value: 'single', label: '🛏️ Single' }, { value: 'double', label: '🛏️🛏️ Double' },
+            { value: 'suite', label: '👑 Suite' }, { value: 'deluxe', label: '✨ Deluxe' },
           ]},
-          { name: 'status', type: 'select', label: 'Status', showInList: true, options: [
-            { value: 'active', label: '✅ Active' }, { value: 'draft', label: '📝 Draft' }, { value: 'archived', label: '📦 Archived' },
+          { name: 'floor',       type: 'number', label: 'Floor',          showInList: true },
+          { name: 'pricePerNight', type: 'number', label: 'Price/Night ($)', required: true, showInList: true },
+          { name: 'capacity',    type: 'number', label: 'Max Guests',     showInList: true },
+          { name: 'status',      type: 'select', label: 'Status',         showInList: true, options: [
+            { value: 'available', label: '✅ Available' }, { value: 'occupied', label: '🔴 Occupied' },
+            { value: 'cleaning', label: '🧹 Cleaning' }, { value: 'maintenance', label: '🔧 Maintenance' },
           ]},
-          { name: 'description', type: 'text', label: 'Description' },
+          { name: 'amenities',   type: 'text',   label: 'Amenities' },
         ]},
-        { name: 'Order', label: 'Order', labelPlural: 'Orders', fields: [
-          { name: 'orderNumber', type: 'string',   label: 'Order #',        required: true, showInList: true },
-          { name: 'customer',    type: 'string',   label: 'Customer Name',  required: true, showInList: true },
-          { name: 'email',       type: 'email',    label: 'Email',          showInList: true },
-          { name: 'total',       type: 'number',   label: 'Total ($)',      showInList: true },
-          { name: 'status',      type: 'select',   label: 'Status',         showInList: true, options: [
-            { value: 'pending',    label: '🕐 Pending' },   { value: 'processing', label: '⚙️ Processing' },
-            { value: 'shipped',    label: '📦 Shipped' },   { value: 'delivered',  label: '✅ Delivered' },
-            { value: 'cancelled',  label: '❌ Cancelled' },
+        { name: 'Guest', label: 'Guest', labelPlural: 'Guests', fields: [
+          { name: 'name',        type: 'string', label: 'Full Name',      required: true, showInList: true, searchable: true },
+          { name: 'email',       type: 'email',  label: 'Email',          showInList: true },
+          { name: 'phone',       type: 'string', label: 'Phone',          showInList: true },
+          { name: 'idType',      type: 'select', label: 'ID Type',        options: [
+            { value: 'passport', label: 'Passport' }, { value: 'drivers_license', label: 'Driver\'s License' },
+            { value: 'national_id', label: 'National ID' },
           ]},
-          { name: 'date',  type: 'datetime', label: 'Order Date', showInList: true },
-          { name: 'notes', type: 'text',     label: 'Notes' },
+          { name: 'idNumber',    type: 'string', label: 'ID Number' },
+          { name: 'nationality', type: 'string', label: 'Nationality' },
+          { name: 'vip',         type: 'boolean', label: 'VIP Guest?',    showInList: true, default: false },
+          { name: 'notes',       type: 'text',   label: 'Notes' },
+        ]},
+        { name: 'Booking', label: 'Booking', labelPlural: 'Bookings', fields: [
+          { name: 'guest',       type: 'relation', label: 'Guest',        entity: 'Guest', required: true, showInList: true },
+          { name: 'room',        type: 'relation', label: 'Room',         entity: 'Room', required: true, showInList: true },
+          { name: 'checkIn',     type: 'date',     label: 'Check-In',     required: true, showInList: true },
+          { name: 'checkOut',    type: 'date',     label: 'Check-Out',    required: true, showInList: true },
+          { name: 'guests',      type: 'number',   label: 'Guests',       showInList: true },
+          { name: 'totalPrice',  type: 'number',   label: 'Total ($)',    showInList: true },
+          { name: 'status',      type: 'select',   label: 'Status',       showInList: true, options: [
+            { value: 'reserved', label: '📅 Reserved' }, { value: 'checked_in', label: '🔑 Checked In' },
+            { value: 'checked_out', label: '✅ Checked Out' }, { value: 'cancelled', label: '❌ Cancelled' },
+          ]},
+          { name: 'specialRequests', type: 'text', label: 'Special Requests' },
+        ]},
+        { name: 'Service', label: 'Service', labelPlural: 'Services', fields: [
+          { name: 'name',        type: 'string', label: 'Service Name',   required: true, showInList: true, searchable: true },
+          { name: 'category',    type: 'select', label: 'Category',       showInList: true, options: [
+            { value: 'housekeeping', label: '🧹 Housekeeping' }, { value: 'room_service', label: '🍽️ Room Service' },
+            { value: 'laundry', label: '👔 Laundry' }, { value: 'spa', label: '💆 Spa' },
+            { value: 'concierge', label: '🎩 Concierge' },
+          ]},
+          { name: 'price',       type: 'number', label: 'Price ($)',      showInList: true },
+          { name: 'available',   type: 'boolean', label: 'Available?',    showInList: true, default: true },
+          { name: 'description', type: 'text',   label: 'Description' },
         ]},
       ],
       pages: [
-        // HOME — revenue stats + recent orders timeline
-        { id: 'home',       route: '/', title: 'Dashboard', root: { kind: 'hero', props: {
-          title: 'Shop Manager', subtitle: 'Track inventory, manage orders, and monitor your revenue.',
-          cta: 'New Order', ctaRoute: '/orders/new',
+        // HOME — Booking overview with room status
+        { id: 'home', route: '/', title: 'Dashboard', root: { kind: 'hero', props: {
+          title: 'Hotel Manager', subtitle: 'Complete hotel operations with bookings, guests, and room management.',
+          cta: 'New Booking', ctaRoute: '/bookings/new',
         }}},
         { id: 'home-stats', route: '/', title: 'Dashboard', root: { kind: 'stats', props: { items: [
-          { label: 'Products Listed', source: { entity: 'Product', op: 'count' } },
-          { label: 'Total Orders',    source: { entity: 'Order',   op: 'count' } },
-          { label: 'Revenue',         source: { entity: 'Order', field: 'total', op: 'sum' } },
-          { label: 'Avg Order Value', source: { entity: 'Order', field: 'total', op: 'avg' } },
+          { label: 'Total Rooms',       source: { entity: 'Room', op: 'count' } },
+          { label: 'Active Bookings',   source: { entity: 'Booking', op: 'count' } },
+          { label: 'Total Guests',      source: { entity: 'Guest', op: 'count' } },
+          { label: 'Revenue',           source: { entity: 'Booking', field: 'totalPrice', op: 'sum' } },
         ]}}},
-        // Recent orders as TIMELINE on home
-        { id: 'home-orders-h',    route: '/', title: 'Recent Orders', root: { kind: 'heading', props: { text: '📦 Recent Orders', level: 2 }}},
-        { id: 'home-orders',      route: '/', title: 'Orders', entity: 'Order', root: { kind: 'timeline', props: {
-          entity: 'Order', dateField: 'date', titleField: 'orderNumber', descriptionField: 'customer',
+        { id: 'home-rooms-h', route: '/', title: 'Room Status', root: { kind: 'heading', props: { text: '🏨 Room Status Board', level: 2 }}},
+        { id: 'home-rooms', route: '/', title: 'Rooms', entity: 'Room', root: { kind: 'kanban', props: {
+          entity: 'Room', groupBy: 'status',
+          columns: ['available', 'occupied', 'cleaning', 'maintenance'],
         }}},
 
-        // PRODUCTS — table with category chart
-        { id: 'products-h',     route: '/products', title: 'Products', root: { kind: 'heading', props: { text: 'Product Catalogue', level: 1 }}},
-        { id: 'products-stats', route: '/products', title: 'Products', root: { kind: 'stats', props: { items: [
-          { label: 'Total Products', source: { entity: 'Product', op: 'count' } },
-          { label: 'Avg Price',      source: { entity: 'Product', field: 'price', op: 'avg' } },
+        // ROOMS — Room inventory
+        { id: 'rooms-h', route: '/rooms', title: 'Rooms', root: { kind: 'heading', props: { text: 'Room Inventory', level: 1 }}},
+        { id: 'rooms-stats', route: '/rooms', title: 'Rooms', root: { kind: 'stats', props: { items: [
+          { label: 'Total Rooms',  source: { entity: 'Room', op: 'count' } },
+          { label: 'Avg Price',    source: { entity: 'Room', field: 'pricePerNight', op: 'avg' } },
         ]}}},
-        { id: 'products',     route: '/products',     title: 'Products', entity: 'Product', root: { kind: 'table', props: { entity: 'Product', pageSize: 25 }}},
-        { id: 'products-new', route: '/products/new', title: 'Add Product', entity: 'Product', root: { kind: 'form', props: { entity: 'Product', mode: 'create', successRoute: '/products' }}},
+        { id: 'rooms-chart', route: '/rooms', title: 'Rooms', root: { kind: 'chart', props: {
+          entity: 'Room', groupBy: 'type', title: 'Rooms by Type', type: 'pie',
+        }}},
+        { id: 'rooms', route: '/rooms', title: 'Rooms', entity: 'Room', root: { kind: 'table', props: { entity: 'Room', pageSize: 25 }}},
+        { id: 'rooms-new', route: '/rooms/new', title: 'Add Room', entity: 'Room', root: { kind: 'form', props: { entity: 'Room', mode: 'create', successRoute: '/rooms' }}},
 
-        // ORDERS — timeline view (unique: not a table)
-        { id: 'orders-h',     route: '/orders', title: 'Orders', root: { kind: 'heading', props: { text: 'Order Management', level: 1 }}},
-        { id: 'orders-stats', route: '/orders', title: 'Orders', root: { kind: 'stats', props: { items: [
-          { label: 'Total Orders', source: { entity: 'Order', op: 'count' } },
-          { label: 'Revenue',      source: { entity: 'Order', field: 'total', op: 'sum' } },
-          { label: 'Avg Order',    source: { entity: 'Order', field: 'total', op: 'avg' } },
+        // GUESTS — Guest directory
+        { id: 'guests-h', route: '/guests', title: 'Guests', root: { kind: 'heading', props: { text: 'Guest Directory', level: 1 }}},
+        { id: 'guests', route: '/guests', title: 'Guests', entity: 'Guest', root: { kind: 'table', props: { entity: 'Guest', pageSize: 30 }}},
+        { id: 'guests-new', route: '/guests/new', title: 'Register Guest', entity: 'Guest', root: { kind: 'form', props: { entity: 'Guest', mode: 'create', successRoute: '/guests' }}},
+
+        // BOOKINGS — Booking calendar with timeline
+        { id: 'bookings-h', route: '/bookings', title: 'Bookings', root: { kind: 'heading', props: { text: 'Booking Calendar', level: 1 }}},
+        { id: 'bookings-stats', route: '/bookings', title: 'Bookings', root: { kind: 'stats', props: { items: [
+          { label: 'Total Bookings', source: { entity: 'Booking', op: 'count' } },
+          { label: 'Total Revenue',  source: { entity: 'Booking', field: 'totalPrice', op: 'sum' } },
         ]}}},
-        { id: 'orders-timeline', route: '/orders', title: 'Orders', entity: 'Order', root: { kind: 'timeline', props: {
-          entity: 'Order', dateField: 'date', titleField: 'orderNumber', descriptionField: 'customer',
+        { id: 'bookings-timeline', route: '/bookings', title: 'Bookings', entity: 'Booking', root: { kind: 'timeline', props: {
+          entity: 'Booking', dateField: 'checkIn', titleField: 'guest', descriptionField: 'room',
         }}},
-        { id: 'orders-new', route: '/orders/new', title: 'New Order', entity: 'Order', root: { kind: 'form', props: { entity: 'Order', mode: 'create', successRoute: '/orders' }}},
+        { id: 'bookings-new', route: '/bookings/new', title: 'New Booking', entity: 'Booking', root: { kind: 'form', props: { entity: 'Booking', mode: 'create', successRoute: '/bookings' }}},
 
-        // ANALYTICS — pure charts (no tables at all)
-        { id: 'analytics-h',        route: '/analytics', title: 'Analytics', root: { kind: 'heading', props: { text: 'Revenue Analytics', level: 1 }}},
-        { id: 'analytics-revenue',  route: '/analytics', title: 'Analytics', root: { kind: 'chart', props: {
-          entity: 'Order', groupBy: 'status', field: 'total', title: 'Revenue by Order Status', type: 'bar',
+        // SERVICES — Hotel services menu
+        { id: 'services-h', route: '/services', title: 'Services', root: { kind: 'heading', props: { text: 'Hotel Services', level: 1 }}},
+        { id: 'services-chart', route: '/services', title: 'Services', root: { kind: 'chart', props: {
+          entity: 'Service', groupBy: 'category', title: 'Services by Category', type: 'bar',
         }}},
-        { id: 'analytics-category', route: '/analytics', title: 'Analytics', root: { kind: 'chart', props: {
-          entity: 'Product', groupBy: 'category', title: 'Products by Category', type: 'pie',
-        }}},
+        { id: 'services', route: '/services', title: 'Services', entity: 'Service', root: { kind: 'table', props: { entity: 'Service', pageSize: 25 }}},
+        { id: 'services-new', route: '/services/new', title: 'Add Service', entity: 'Service', root: { kind: 'form', props: { entity: 'Service', mode: 'create', successRoute: '/services' }}},
       ],
     },
   },

@@ -3,6 +3,7 @@
 // or dropped, unknown things are ignored. We never throw.
 
 import type { AppConfig, ComponentNode, EntityDef, FieldDef, PageDef } from './types';
+import type { Logger } from '../logger';
 
 const SAFE_EMPTY: AppConfig = {
   name: 'Untitled app',
@@ -72,6 +73,7 @@ function safeEntity(raw: unknown): EntityDef | null {
 const ALLOWED_KINDS = new Set([
   'hero','heading','text','stats','table','form','chart',
   'card','button','list','iframe','divider','spacer',
+  'kanban','timeline',
 ]);
 
 function safeNode(raw: unknown): ComponentNode | null {
@@ -118,14 +120,48 @@ function safeI18n(raw: unknown): Record<string, Record<string, string>> | undefi
   return Object.keys(out).length ? out : undefined;
 }
 
-export function parseConfig(input: unknown): AppConfig {
-  // 1) Accept string by attempting JSON.parse, otherwise return safe empty.
-  if (typeof input === 'string') {
-    try { input = JSON.parse(input); } catch { return { ...SAFE_EMPTY }; }
+export function parseConfig(input: unknown, logger?: Logger): AppConfig {
+  // Log parse start
+  if (logger) {
+    const inputType = typeof input;
+    const inputSize = typeof input === 'string' ? input.length : undefined;
+    logger.info('parser', 'parse_start', {
+      inputType,
+      inputSize,
+    });
   }
-  if (!input || typeof input !== 'object') return { ...SAFE_EMPTY };
+
+  // 1) Accept string by attempting JSON.parse, otherwise return safe empty.
+  let jsonParseSuccess = false;
+  if (typeof input === 'string') {
+    try { 
+      input = JSON.parse(input);
+      jsonParseSuccess = true;
+      if (logger) {
+        logger.info('parser', 'json_parse_success', {});
+      }
+    } catch (error) {
+      if (logger) {
+        logger.warn('parser', 'json_parse_failure', { error: String(error) });
+      }
+      return { ...SAFE_EMPTY };
+    }
+  }
+  if (!input || typeof input !== 'object') {
+    if (logger) {
+      logger.warn('parser', 'invalid_input_type', { 
+        actualType: typeof input,
+        expected: 'object' 
+      });
+    }
+    return { ...SAFE_EMPTY };
+  }
 
   const r = input as Record<string, unknown>;
+  
+  // Track corrections for logging
+  const corrections: string[] = [];
+  
   const entities = asArray(r.entities).map(safeEntity).filter((e): e is EntityDef => !!e);
   const pages = asArray(r.pages).map(safePage).filter((p): p is PageDef => !!p);
 
@@ -147,9 +183,25 @@ export function parseConfig(input: unknown): AppConfig {
         },
       ];
 
-  return {
-    name: asString(r.name, 'Untitled app'),
-    description: typeof r.description === 'string' ? r.description : '',
+  if (!pages.length) {
+    corrections.push('Added welcome page (no pages provided)');
+  }
+
+  // Track name correction
+  const name = asString(r.name, 'Untitled app');
+  if (!r.name || r.name === '') {
+    corrections.push('Missing name field, filled with "Untitled app"');
+  }
+
+  // Track description correction
+  const description = typeof r.description === 'string' ? r.description : '';
+  if (r.description !== undefined && typeof r.description !== 'string') {
+    corrections.push('Invalid description type, coerced to empty string');
+  }
+
+  const finalConfig: AppConfig = {
+    name,
+    description,
     theme: r.theme && typeof r.theme === 'object'
       ? {
           primary: typeof (r.theme as Record<string, unknown>).primary === 'string'
@@ -167,15 +219,40 @@ export function parseConfig(input: unknown): AppConfig {
     workflows: undefined, // parsed on demand
     i18n: safeI18n(r.i18n),
   };
+
+  // Log corrections applied and final structure
+  if (logger) {
+    logger.info('parser', 'parse_complete', {
+      correctionsApplied: corrections,
+      entityCount: entities.length,
+      pageCount: finalPages.length,
+    });
+  }
+
+  return finalConfig;
 }
 
 // Given an AppConfig, ensure every entity has a usable list (table) and
 // new-record (form) page. If the AI returned entities but only a hero home
 // page, this fills in the missing CRUD pages so the app is actually usable.
 // Returns a new AppConfig (does not mutate).
-export function ensureCompleteApp(cfg: AppConfig): AppConfig {
+export function ensureCompleteApp(cfg: AppConfig, logger?: Logger): AppConfig {
   const entityNames = cfg.entities.map((e) => e.name);
-  if (entityNames.length === 0) return cfg;
+  
+  // Log augmentation start with input state
+  logger?.info('augmenter', 'augmentation_start', {
+    entityCount: cfg.entities.length,
+    pageCount: cfg.pages.length,
+    existingRoutes: cfg.pages.map(p => p.route),
+    hasTheme: !!cfg.theme?.primary,
+  });
+  
+  if (entityNames.length === 0) {
+    logger?.info('augmenter', 'augmentation_skipped', {
+      reason: 'No entities defined',
+    });
+    return cfg;
+  }
 
   const slugFor = (name: string) => {
     const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -184,6 +261,7 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
   };
 
   const augmented: PageDef[] = [...cfg.pages];
+  let pagesAdded = 0;
 
   // Helper: recompute routes from the CURRENT augmented array (not original)
   const hasRoute = (route: string) => augmented.some((p) => p.route.toLowerCase() === route.toLowerCase());
@@ -199,7 +277,8 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
     ));
 
   // 1. Make sure there is a home page.
-  if (!hasRoute('/')) {
+  const homeExists = hasRoute('/');
+  if (!homeExists) {
     augmented.unshift({
       id: 'home',
       route: '/',
@@ -211,6 +290,15 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
           subtitle: cfg.description || `Manage your data with ${cfg.name}.`,
         },
       },
+    });
+    pagesAdded++;
+    logger?.info('augmenter', 'home_page_added', {
+      route: '/',
+      reason: 'No home page found',
+    });
+  } else {
+    logger?.info('augmenter', 'home_page_exists', {
+      route: '/',
     });
   }
 
@@ -231,6 +319,15 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
         },
       },
     });
+    pagesAdded++;
+    logger?.info('augmenter', 'stats_page_added', {
+      route: '/',
+      entityCount: Math.min(4, entityNames.length),
+    });
+  } else if (hasStats) {
+    logger?.info('augmenter', 'stats_page_exists', {
+      status: 'Stats section already present',
+    });
   }
 
   // 3. For each entity, make sure a table page and a form page exist.
@@ -238,6 +335,15 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
     const slug = slugFor(e.name);
     const listRoute = `/${slug}`;
     const newRoute = `/${slug}/new`;
+    
+    const existingTablePages = augmented.filter(p => p.entity === e.name && p.root?.kind === 'table').length;
+    const existingFormPages = augmented.filter(p => p.entity === e.name && p.root?.kind === 'form').length;
+
+    logger?.info('augmenter', 'entity_processing', {
+      entityName: e.name,
+      existingTablePages,
+      existingFormPages,
+    });
 
     if (!hasTableForEntity(e.name)) {
       augmented.push({
@@ -246,6 +352,15 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
         title: e.labelPlural ?? `${e.name}s`,
         entity: e.name,
         root: { kind: 'table', props: { entity: e.name, pageSize: 20 } },
+      });
+      pagesAdded++;
+      logger?.info('augmenter', 'table_page_added', {
+        entityName: e.name,
+        route: listRoute,
+      });
+    } else {
+      logger?.info('augmenter', 'table_page_exists', {
+        entityName: e.name,
       });
     }
 
@@ -256,6 +371,15 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
         title: `New ${e.label ?? e.name}`,
         entity: e.name,
         root: { kind: 'form', props: { entity: e.name, mode: 'create', successRoute: listRoute } },
+      });
+      pagesAdded++;
+      logger?.info('augmenter', 'form_page_added', {
+        entityName: e.name,
+        route: newRoute,
+      });
+    } else {
+      logger?.info('augmenter', 'form_page_exists', {
+        entityName: e.name,
       });
     }
   }
@@ -275,12 +399,26 @@ export function ensureCompleteApp(cfg: AppConfig): AppConfig {
   const themeIdx = cfg.name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % THEME_PALETTE.length;
   const defaultTheme = THEME_PALETTE[themeIdx];
 
+  const aiProvidedTheme = !!(cfg.theme?.primary && cfg.theme?.accent);
   const theme = {
     primary: cfg.theme?.primary ?? defaultTheme.primary,
     accent: cfg.theme?.accent ?? defaultTheme.accent,
     logoText: cfg.theme?.logoText ?? cfg.name,
     faviconEmoji: cfg.theme?.faviconEmoji,
   };
+
+  logger?.info('augmenter', 'theme_colors', {
+    source: aiProvidedTheme ? 'AI-provided' : 'generated',
+    primary: theme.primary,
+    accent: theme.accent,
+  });
+
+  // Log augmentation summary
+  logger?.info('augmenter', 'augmentation_complete', {
+    pagesAdded,
+    finalPageCount: augmented.length,
+    entitiesProcessed: cfg.entities.length,
+  });
 
   return { ...cfg, pages: augmented, theme };
 }

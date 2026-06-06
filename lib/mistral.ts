@@ -364,6 +364,7 @@ async function tryProvider(provider: Provider, prompt: string, logger?: Logger):
 
 export async function generateConfigFromPrompt(prompt: string, logger?: Logger): Promise<AppConfig> {
   const primaryProvider = getProvider();
+  const isTestMode = process.env.AI_TEST_MODE === 'true';
 
   // Build a fallback chain: primary first, then any other provider that has a key.
   const allProviders: Provider[] = ['groq', 'mistral', 'openai', 'anthropic'];
@@ -378,7 +379,60 @@ export async function generateConfigFromPrompt(prompt: string, logger?: Logger):
     primaryProvider,
     providerChain: chain,
     chainLength: chain.length,
+    testMode: isTestMode,
   });
+
+  // Check for test mode - skip external API calls
+  if (isTestMode) {
+    const template = fallbackForPrompt(prompt);
+    const templateId = TEMPLATES.find(t => t.config === template)?.id || 'unknown';
+    
+    logger?.info('provider', 'test_mode_active', {
+      reason: 'AI_TEST_MODE environment variable is true',
+      action: 'Skipping external API calls',
+      templateId,
+      prompt: prompt.substring(0, 100),
+    });
+
+    logger?.info('provider', 'test_mode_config', {
+      templateId,
+      rawTemplate: {
+        name: template.name,
+        description: template.description,
+        entityCount: template.entities.length,
+        pageCount: template.pages.length,
+        entities: template.entities.map(e => ({
+          name: e.name,
+          fieldCount: e.fields.length,
+        })),
+        pages: template.pages.map(p => ({
+          id: p.id,
+          route: p.route,
+          kind: p.root?.kind,
+          entity: p.entity,
+        })),
+      },
+    });
+
+    const finalConfig = ensureCompleteApp(parseConfig(template, logger), logger);
+
+    logger?.info('provider', 'generation_complete', {
+      source: 'template',
+      templateId,
+      testMode: true,
+      entityCount: finalConfig.entities.length,
+      pageCount: finalConfig.pages.length,
+      hasTheme: !!finalConfig.theme,
+      finalStructure: {
+        entities: finalConfig.entities.map(e => e.name),
+        pageRoutes: finalConfig.pages.map(p => p.route),
+        pageKinds: finalConfig.pages.map(p => p.root?.kind),
+        theme: finalConfig.theme,
+      },
+    });
+
+    return finalConfig;
+  }
 
   for (let i = 0; i < chain.length; i++) {
     const provider = chain[i];

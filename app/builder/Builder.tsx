@@ -2,7 +2,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Loader2, Wand2, ArrowRight } from 'lucide-react';
+import {
+  Sparkles, Loader2, Wand2, ArrowRight, Home, Table,
+  FileEdit, BarChart3, Layout, Save, Eye, Layers,
+} from 'lucide-react';
 import { Renderer } from '@/components/renderer/Renderer';
 import { setI18nContext } from '@/components/renderer/useT';
 import { parseConfig } from '@/lib/config/parser';
@@ -17,6 +20,28 @@ const SUGGESTIONS = [
   'An inventory app with products, stock levels, and low-stock alerts.',
   'A project management app with tasks, assignees, and status boards.',
 ];
+
+// Icon for route-type inference
+function routeIcon(route: string, root?: { kind: string }): React.ElementType {
+  if (route === '/') return Home;
+  const kind = root?.kind;
+  if (kind === 'table') return Table;
+  if (kind === 'form') return FileEdit;
+  if (kind === 'chart') return BarChart3;
+  if (kind === 'stats') return BarChart3;
+  return Layout;
+}
+
+// Emoji badge for route type
+function routeEmoji(route: string, root?: { kind: string }): string {
+  if (route === '/') return '🏠';
+  const kind = root?.kind;
+  if (kind === 'table') return '📋';
+  if (kind === 'form') return '✏️';
+  if (kind === 'chart') return '📊';
+  if (kind === 'stats') return '📊';
+  return '📄';
+}
 
 export function Builder({ templates }: { templates: Tpl[] }) {
   const router = useRouter();
@@ -85,8 +110,12 @@ export function Builder({ templates }: { templates: Tpl[] }) {
           <div className="max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
             <Link href="/dashboard" className="text-sm text-white/90 hover:text-white inline-flex items-center gap-1">← Dashboard</Link>
             {config && (
-              <button onClick={save} disabled={saving} className="inline-flex items-center gap-1 rounded-md bg-white text-purple-700 px-4 py-2 text-sm font-semibold hover:bg-purple-50">
-                {saving ? 'Saving…' : 'Save & open'} <ArrowRight className="h-4 w-4" />
+              <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-white text-purple-700 px-5 py-2.5 text-sm font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                {saving ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</>
+                ) : (
+                  <><Save className="h-4 w-4" /> Save & Open App</>
+                )}
               </button>
             )}
           </div>
@@ -145,62 +174,125 @@ export function Builder({ templates }: { templates: Tpl[] }) {
         </div>
 
         {config && (
-          <div className="mt-6 grid md:grid-cols-3 gap-4">
-            <div className="card p-4 md:col-span-1">
-              <h2 className="font-semibold mb-2">App details</h2>
-              <label className="text-sm text-slate-600">Name</label>
-              <input className="input mt-1" value={name} onChange={(e) => setName(e.target.value)} />
-              <label className="text-sm text-slate-600 mt-3 block">Description</label>
-              <textarea rows={2} className="input mt-1" value={config.description ?? ''} onChange={(e) => setConfig({ ...config, description: e.target.value })} />
-              <h3 className="text-sm font-medium mt-4 mb-1">Entities ({config.entities.length})</h3>
-              <ul className="text-sm text-slate-700 space-y-1">
-                {config.entities.map((e) => (<li key={e.name}>• <b>{e.name}</b> ({e.fields.length} fields)</li>))}
-              </ul>
-              <h3 className="text-sm font-medium mt-4 mb-1">Pages ({config.pages.length})</h3>
-              <ul className="text-sm text-slate-700 space-y-1">
-                {config.pages.map((p) => (<li key={p.id}>• <code className="text-xs bg-purple-50 px-1 rounded">{p.route}</code> — {p.title}</li>))}
-              </ul>
-            </div>
-            <div className="card p-4 md:col-span-2">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="font-semibold">Live preview</h2>
-                <span className="text-xs text-slate-400">{uniquePreviewRoutes.length} route{uniquePreviewRoutes.length !== 1 ? 's' : ''} · {config.pages.length} page section{config.pages.length !== 1 ? 's' : ''}</span>
-              </div>
-              {/* Page tabs — one per unique route */}
-              {uniquePreviewRoutes.length > 1 && (
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {uniquePreviewRoutes.map((p) => (
-                    <button
-                      key={p.route}
-                      onClick={() => setPreviewRoute(p.route)}
-                      className={`px-2.5 py-1 rounded text-xs font-mono transition ${
-                        previewRoute === p.route
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
-                      }`}
-                    >
-                      {p.route}
-                    </button>
-                  ))}
+          <div className="mt-6 space-y-4">
+            {/* App Overview Panel */}
+            <div className="card p-5 bg-gradient-to-r from-purple-50 to-white">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl bg-purple-100 p-3">
+                    <Layers className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">{name || config.name}</h2>
+                    <p className="text-sm text-slate-500">{config.description}</p>
+                  </div>
                 </div>
-              )}
-              <div className="border border-purple-100 rounded-md p-4 bg-gradient-to-br from-purple-50 to-white min-h-[300px] space-y-4">
-                {config.pages
-                  .filter((p) => p.route === previewRoute)
-                  .map((p) => (
-                    <Renderer
-                      key={p.id}
-                      node={p.root}
-                      appId="preview"
-                      entityName={p.entity}
-                    />
-                  ))
-                }
+                <button
+                  onClick={save}
+                  disabled={saving}
+                  className="btn text-base px-6 py-3 shadow-lg hover:shadow-xl"
+                >
+                  {saving ? (
+                    <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Saving…</>
+                  ) : (
+                    <><Save className="h-5 w-5 mr-2" /> Save & Open Full App</>
+                  )}
+                </button>
               </div>
-              <p className="text-xs text-slate-400 mt-2">
-                Previewing route: <span className="font-medium text-slate-600">{previewRoute}</span>
-                <span className="ml-2 text-purple-400">· Tables and forms need a saved app to load data</span>
-              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg bg-white border border-purple-100 p-3 text-center">
+                  <div className="text-2xl font-bold text-purple-700">{config.entities.length}</div>
+                  <div className="text-xs text-slate-500 font-medium">Entities</div>
+                </div>
+                <div className="rounded-lg bg-white border border-purple-100 p-3 text-center">
+                  <div className="text-2xl font-bold text-purple-700">{config.entities.reduce((s, e) => s + e.fields.length, 0)}</div>
+                  <div className="text-xs text-slate-500 font-medium">Total Fields</div>
+                </div>
+                <div className="rounded-lg bg-white border border-purple-100 p-3 text-center">
+                  <div className="text-2xl font-bold text-purple-700">{uniquePreviewRoutes.length}</div>
+                  <div className="text-xs text-slate-500 font-medium">Routes</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="card p-4 md:col-span-1">
+                <h2 className="font-semibold mb-3">App details</h2>
+                <label className="text-sm text-slate-600">Name</label>
+                <input className="input mt-1" value={name} onChange={(e) => setName(e.target.value)} />
+                <label className="text-sm text-slate-600 mt-3 block">Description</label>
+                <textarea rows={2} className="input mt-1" value={config.description ?? ''} onChange={(e) => setConfig({ ...config, description: e.target.value })} />
+                <h3 className="text-sm font-medium mt-4 mb-2">Entities ({config.entities.length})</h3>
+                <ul className="text-sm text-slate-700 space-y-1.5">
+                  {config.entities.map((e) => (
+                    <li key={e.name} className="flex items-center gap-2 bg-slate-50 rounded-md px-2.5 py-1.5 border border-slate-100">
+                      <span className="text-purple-600 font-medium">{e.label ?? e.name}</span>
+                      <span className="ml-auto text-xs text-slate-400">{e.fields.length} fields</span>
+                    </li>
+                  ))}
+                </ul>
+                <h3 className="text-sm font-medium mt-4 mb-2">Routes ({uniquePreviewRoutes.length})</h3>
+                <ul className="text-sm text-slate-700 space-y-1.5">
+                  {uniquePreviewRoutes.map((p) => (
+                    <li key={p.route} className="flex items-center gap-2 bg-slate-50 rounded-md px-2.5 py-1.5 border border-slate-100">
+                      <span>{routeEmoji(p.route, p.root)}</span>
+                      <code className="text-xs font-mono text-purple-600">{p.route}</code>
+                      <span className="ml-auto text-xs text-slate-400">{p.title}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="card p-4 md:col-span-2">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-semibold flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-purple-500" />
+                    Live Preview
+                  </h2>
+                  <span className="text-xs text-slate-400">{uniquePreviewRoutes.length} route{uniquePreviewRoutes.length !== 1 ? 's' : ''}</span>
+                </div>
+                {/* Route tabs — prominent with icons */}
+                {uniquePreviewRoutes.length > 1 && (
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {uniquePreviewRoutes.map((p) => {
+                      const Icon = routeIcon(p.route, p.root);
+                      const isActive = previewRoute === p.route;
+                      return (
+                        <button
+                          key={p.route}
+                          onClick={() => setPreviewRoute(p.route)}
+                          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                            isActive
+                              ? 'bg-purple-600 text-white shadow-md'
+                              : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span>{routeEmoji(p.route, p.root)}</span>
+                          <span className="font-mono text-xs">{p.route}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <div className="border border-purple-100 rounded-lg p-4 bg-gradient-to-br from-purple-50/40 to-white min-h-[300px] space-y-4">
+                  {config.pages
+                    .filter((p) => p.route === previewRoute)
+                    .map((p) => (
+                      <Renderer
+                        key={p.id}
+                        node={p.root}
+                        appId="preview"
+                        entityName={p.entity}
+                        config={config}
+                      />
+                    ))
+                  }
+                </div>
+                <p className="text-xs text-slate-400 mt-2">
+                  Previewing route: <span className="font-medium text-slate-600">{previewRoute}</span>
+                  <span className="ml-2 text-purple-400">· Tables and forms show mock data — save to see real data</span>
+                </p>
+              </div>
             </div>
           </div>
         )}

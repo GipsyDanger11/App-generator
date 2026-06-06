@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { CompProps } from '../registry';
 import { useT } from '../useT';
-import { useEntityDef } from '../AppConfigContext';
+// AppConfig context available via useAppConfig if needed
 import {
   Users, DollarSign, TrendingUp, CheckSquare, Package,
   BarChart2, Star, Calendar, Activity, Hash,

@@ -14,6 +14,8 @@ import { Button } from './components/Button';
 import { List } from './components/List';
 import { Iframe } from './components/Iframe';
 import { Divider, Spacer } from './components/Atoms';
+import { Kanban } from './components/Kanban';
+import { Timeline } from './components/Timeline';
 import { ErrorBoundary } from './ErrorBoundary';
 import { UnknownComponent } from './UnknownComponent';
 import type { ComponentNode } from '@/lib/config/types';
@@ -42,6 +44,8 @@ export const componentRegistry: CompMap = {
   iframe: Iframe,
   divider: Divider,
   spacer: Spacer,
+  kanban: Kanban,
+  timeline: Timeline,
 };
 
 export { ErrorBoundary, UnknownComponent };

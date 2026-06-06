@@ -69,6 +69,59 @@ npm run dev
 
 Open http://localhost:3000 and sign up.
 
+### Dev server restart and cache clearing
+
+When you make code changes and they aren't reflected in the running application, you may need to restart the dev server and clear the Next.js build cache.
+
+**Symptoms that indicate you need to restart:**
+- Code changes don't appear in the running app
+- Old API responses are still being returned
+- Health endpoint reports an outdated version
+- Unexpected behavior that doesn't match recent code
+
+**Steps to properly restart:**
+
+1. **Stop the dev server:**
+   - Press `Ctrl+C` in the terminal running `npm run dev`
+
+2. **Clear the Next.js build cache:**
+   ```bash
+   # On macOS/Linux:
+   rm -rf .next
+
+   # On Windows (PowerShell):
+   Remove-Item -Recurse -Force .next
+   ```
+
+3. **Restart the dev server:**
+   ```bash
+   npm run dev
+   ```
+
+4. **Verify the code version:**
+   - Open http://localhost:3000/api/apps/generate/health
+   - Check the `version` field matches your current code
+   - Check the `timestamp` reflects when you restarted
+   - Check `cache.processUptime` is low (recently restarted)
+
+**Troubleshooting:**
+
+If changes still aren't reflected after restarting:
+- Clear your browser cache (Ctrl+Shift+R or Cmd+Shift+R)
+- Check that you're editing the correct file (not a copy)
+- Verify the health endpoint shows the correct `version` identifier
+- Check the terminal for build errors or warnings
+- Try stopping the dev server, running `npm install`, then restarting
+
+**Health check endpoint:**
+
+The health endpoint at `/api/apps/generate/health` returns useful debugging info:
+- `version`: Current code version (Git hash or package.json version)
+- `timestamp`: Server's current time
+- `providers.configured`: Which AI providers have API keys configured
+- `cache.nodeVersion`: Node.js version
+- `cache.processUptime`: Seconds since server started
+
 ### Required env vars
 
 | Var | Notes |

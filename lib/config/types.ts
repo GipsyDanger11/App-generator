@@ -56,7 +56,9 @@ export type ComponentKind =
   | 'list'
   | 'iframe'
   | 'divider'
-  | 'spacer';
+  | 'spacer'
+  | 'kanban'
+  | 'timeline';
 
 export interface ComponentNode {
   id?: string;

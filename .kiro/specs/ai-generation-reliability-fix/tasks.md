@@ -126,8 +126,8 @@ This implementation adds comprehensive structured logging, validation enforcemen
     - Verify logs show provider attempts, fallbacks, and decisions
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 7. Enhance prompts with explicit CRUD requirements
-  - [ ] 7.1 Update system prompt in provider functions
+- [x] 7. Enhance prompts with explicit CRUD requirements
+  - [x] 7.1 Update system prompt in provider functions
     - Modify system prompt in `lib/mistral.ts` to explicitly warn against hero-only apps
     - Add "HARD RULES" section stating: "You MUST generate table pages for EVERY entity"
     - Add rule: "You MUST generate form pages for EVERY entity"
@@ -136,23 +136,23 @@ This implementation adds comprehensive structured logging, validation enforcemen
     - List all allowed component kinds
     - _Requirements: 5.3, 5.4, 5.5_
 
-  - [~] 7.2 Update user prompt construction
+  - [x] 7.2 Update user prompt construction
     - Modify user prompt to restate user's request
     - Add reminder: "Include table pages for listing all entities"
     - Add reminder: "Include form pages for creating/editing all entities"
     - Request JSON-only output
     - _Requirements: 5.3, 5.4_
 
-  - [~] 7.3 Add prompt logging
+  - [x] 7.3 Add prompt logging
     - Log full system prompt before provider call (debug level)
     - Log user prompt before provider call (info level)
     - _Requirements: 5.1, 5.2_
 
-- [~] 8. Checkpoint - Verify provider chain enhancements
+- [x] 8. Checkpoint - Verify provider chain enhancements
   - Ensure all tests pass, manually test generation and verify logs show provider attempts, validation results, and fallback behavior, ask the user if questions arise.
 
 - [ ] 9. Enhance config parser with logging
-  - [~] 9.1 Add logging to parseConfig function
+  - [-] 9.1 Add logging to parseConfig function
     - Modify `parseConfig()` in `lib/config/parser.ts` to accept optional `logger` parameter
     - Log parse start with input type and size (if string)
     - Attempt JSON parse, log parse success or failure
@@ -161,7 +161,7 @@ This implementation adds comprehensive structured logging, validation enforcemen
     - Return AppConfig
     - _Requirements: 3.1, 3.2_
 
-  - [~] 9.2 Add logging to ensureCompleteApp function
+  - [-] 9.2 Add logging to ensureCompleteApp function
     - Modify `ensureCompleteApp()` in `lib/config/parser.ts` to accept optional `logger` parameter
     - Log augmentation start with input state (entity count, page count, existing routes)
     - Check and log home page status (exists/added)
@@ -193,7 +193,7 @@ This implementation adds comprehensive structured logging, validation enforcemen
     - _Requirements: 4.5, 4.6, 4.7, 6.1, 6.2_
 
 - [ ] 10. Add test mode support
-  - [~] 10.1 Implement test mode environment variable handling
+  - [-] 10.1 Implement test mode environment variable handling
     - Check for `AI_TEST_MODE` environment variable in `lib/mistral.ts`
     - When test mode is enabled, skip external API calls to AI providers
     - Log test mode activation
@@ -201,7 +201,7 @@ This implementation adds comprehensive structured logging, validation enforcemen
     - Include detailed config structure in test mode logs
     - _Requirements: 9.1, 9.3, 9.4_
 
-  - [~] 10.2 Validate template configs
+  - [-] 10.2 Validate template configs
     - Add startup validation that all template configs pass `isUsableConfig()`
     - Log validation results for each template
     - Throw error if any template is invalid (fail-fast)
@@ -214,7 +214,7 @@ This implementation adds comprehensive structured logging, validation enforcemen
     - _Requirements: 9.1, 9.3_
 
 - [ ] 11. Add documentation for cache management
-  - [~] 11.1 Update README with dev server restart instructions
+  - [ ] 11.1 Update README with dev server restart instructions
     - Add section explaining how to properly restart dev server after code changes
     - Document cache clearing steps: `rm -rf .next` (or `Remove-Item -Recurse -Force .next` on Windows)
     - Explain how to verify code version using health endpoint

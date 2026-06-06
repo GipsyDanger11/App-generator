@@ -4,7 +4,7 @@
 
 import type { AppConfig } from './types';
 
-export interface Template { id: string; name: string; description: string; emoji: string; config: AppConfig }
+export interface Template { id: string; name: string; description: string; emoji: string; config: AppConfig; skipValidation?: boolean }
 
 export const TEMPLATES: Template[] = [
   {
@@ -269,6 +269,7 @@ export const TEMPLATES: Template[] = [
     name: 'Blank app',
     description: 'Start from scratch.',
     emoji: '✨',
+    skipValidation: true,
     config: {
       name: 'My App',
       description: 'A new app.',
@@ -280,4 +281,83 @@ export const TEMPLATES: Template[] = [
 
 export function findTemplate(id: string): Template | null {
   return TEMPLATES.find((t) => t.id === id) ?? null;
+}
+
+/**
+ * Validate that an AppConfig is actually useful — has entities and non-hero pages.
+ * This is a lightweight version for template validation to avoid circular dependencies.
+ * Returns { valid: boolean, reason?: string }.
+ */
+function validateTemplateConfig(cfg: AppConfig): { valid: boolean; reason?: string } {
+  // Check for at least one entity
+  if (cfg.entities.length === 0) {
+    return { valid: false, reason: 'No entities defined' };
+  }
+
+  // Check for at least one table page
+  const tablePages = cfg.pages.filter((p) => p.root?.kind === 'table');
+  if (tablePages.length === 0) {
+    return { valid: false, reason: 'No table pages found' };
+  }
+
+  // Check for at least one form page
+  const formPages = cfg.pages.filter((p) => p.root?.kind === 'form');
+  if (formPages.length === 0) {
+    return { valid: false, reason: 'No form pages found' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate all template configs at module initialization.
+ * This ensures all curated templates are valid complete apps (fail-fast).
+ */
+export function validateAllTemplates(): void {
+  console.log('[templates] Validating template configs at startup...');
+  
+  const results: { id: string; valid: boolean; reason?: string }[] = [];
+  
+  for (const template of TEMPLATES) {
+    // Templates marked skipValidation (e.g. blank starter) are intentionally minimal
+    if (template.skipValidation) {
+      console.log(`[templates] ⊘ Template "${template.id}" skipped (skipValidation=true)`);
+      results.push({ id: template.id, valid: true });
+      continue;
+    }
+
+    const validation = validateTemplateConfig(template.config);
+    
+    if (validation.valid) {
+      console.log(`[templates] ✓ Template "${template.id}" is valid`, {
+        entities: template.config.entities.length,
+        pages: template.config.pages.length,
+        tablePages: template.config.pages.filter(p => p.root?.kind === 'table').length,
+        formPages: template.config.pages.filter(p => p.root?.kind === 'form').length,
+      });
+      results.push({ id: template.id, valid: true });
+    } else {
+      console.error(`[templates] ✗ Template "${template.id}" is INVALID: ${validation.reason}`, {
+        entities: template.config.entities.length,
+        pages: template.config.pages.length,
+        pageKinds: template.config.pages.map(p => p.root?.kind),
+      });
+      results.push({ id: template.id, valid: false, reason: validation.reason });
+    }
+  }
+  
+  const invalidTemplates = results.filter(r => !r.valid);
+  
+  if (invalidTemplates.length > 0) {
+    const errorMsg = `Template validation FAILED! Invalid templates: ${invalidTemplates.map(t => `${t.id} (${t.reason})`).join(', ')}`;
+    console.error('[templates]', errorMsg);
+    throw new Error(errorMsg);
+  }
+  
+  console.log(`[templates] ✅ All ${TEMPLATES.length} template configs validated successfully`);
+}
+
+// Run validation at module initialization (server-side only)
+if (typeof window === 'undefined') {
+  validateAllTemplates();
 }

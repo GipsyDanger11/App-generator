@@ -13,7 +13,11 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "ai:setup": "cd ai-service && python -m venv .venv && .venv\\Scripts\\pip install --prefer-binary -r requirements.txt",
+    "ai:start": "cd ai-service && .venv\\Scripts\\uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
+    "ai:test": "cd ai-service && set PYTHONIOENCODING=utf-8 && .venv\\Scripts\\python test_service.py",
+    "ai:health": "curl -s http://localhost:8000/health"
   },
   "dependencies": {
     "@auth/prisma-adapter": "2.7.4",
